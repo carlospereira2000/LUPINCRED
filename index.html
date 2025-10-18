@@ -5,24 +5,32 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Lupin Cred - Calculadora de Juros Profissional</title>
     <style>
-        body {
+        * {
             box-sizing: border-box;
+        }
+
+        body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             margin: 0;
-            padding: 20px;
+            padding: 10px;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100%;
+            width: 100%;
+            overflow-x: hidden;
         }
         
         html {
             height: 100%;
+            width: 100%;
+            overflow-x: hidden;
         }
 
         .container {
-            max-width: 1200px;
+            max-width: 100%;
+            width: 100%;
             margin: 0 auto;
             background: white;
-            border-radius: 20px;
+            border-radius: 15px;
             box-shadow: 0 20px 40px rgba(0,0,0,0.1);
             overflow: hidden;
         }
@@ -30,34 +38,35 @@
         .header {
             background: linear-gradient(135deg, #2c3e50, #3498db);
             color: white;
-            padding: 30px;
+            padding: 20px 15px;
             text-align: center;
         }
 
         .header h1 {
             margin: 0;
-            font-size: 2.5rem;
+            font-size: 1.8rem;
             font-weight: 700;
         }
 
         .header p {
             margin: 10px 0 0 0;
             opacity: 0.9;
-            font-size: 1.1rem;
+            font-size: 0.95rem;
         }
 
         .main-content {
             display: grid;
             grid-template-columns: 1fr;
-            gap: 20px;
-            padding: 20px;
+            gap: 15px;
+            padding: 15px;
         }
 
         .calculator-section {
             background: #f8f9fa;
-            padding: 25px;
+            padding: 20px 15px;
             border-radius: 15px;
             border: 2px solid #e9ecef;
+            width: 100%;
         }
 
         .section-title {
@@ -142,9 +151,10 @@
 
         .results {
             background: white;
-            padding: 25px;
+            padding: 20px 15px;
             border-radius: 15px;
             border: 2px solid #e9ecef;
+            width: 100%;
         }
 
         .result-card {
@@ -179,19 +189,22 @@
             border-radius: 10px;
             overflow: hidden;
             box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            font-size: 0.85rem;
         }
 
         .comparison-table th {
             background: #3498db;
             color: white;
-            padding: 15px;
+            padding: 10px 8px;
             text-align: left;
             font-weight: 600;
+            font-size: 0.8rem;
         }
 
         .comparison-table td {
-            padding: 12px 15px;
+            padding: 8px 6px;
             border-bottom: 1px solid #e9ecef;
+            font-size: 0.8rem;
         }
 
         .comparison-table tr:hover {
@@ -199,12 +212,11 @@
         }
 
         .history-section {
-            grid-column: 1 / -1;
             background: #f8f9fa;
-            padding: 25px;
+            padding: 20px 15px;
             border-radius: 15px;
             border: 2px solid #e9ecef;
-            margin-top: 20px;
+            width: 100%;
         }
 
         .history-item {
@@ -233,12 +245,11 @@
         }
 
         .tips-section {
-            grid-column: 1 / -1;
             background: linear-gradient(135deg, #8e44ad, #9b59b6);
             color: white;
-            padding: 25px;
+            padding: 20px 15px;
             border-radius: 15px;
-            margin-top: 20px;
+            width: 100%;
         }
 
         .advanced-grid {
@@ -329,12 +340,11 @@
         }
 
         .statistics-section {
-            grid-column: 1 / -1;
             background: #f8f9fa;
-            padding: 25px;
+            padding: 20px 15px;
             border-radius: 15px;
             border: 2px solid #e9ecef;
-            margin-top: 20px;
+            width: 100%;
         }
 
         .stats-grid {
@@ -848,5 +858,5 @@
         displayHistory();
         displayDailyStats();
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9909e6d18029009f',t:'MTc2MDgxMDA3NC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9909edd9818c009f',t:'MTc2MDgxMDM2Mi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
