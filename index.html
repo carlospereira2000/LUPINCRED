@@ -48,9 +48,9 @@
 
         .main-content {
             display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 30px;
-            padding: 30px;
+            grid-template-columns: 1fr;
+            gap: 20px;
+            padding: 20px;
         }
 
         .calculator-section {
@@ -232,7 +232,7 @@
             background: #c0392b;
         }
 
-        .simulator-section {
+        .tips-section {
             grid-column: 1 / -1;
             background: linear-gradient(135deg, #8e44ad, #9b59b6);
             color: white;
@@ -241,61 +241,91 @@
             margin-top: 20px;
         }
 
-        .quick-simulator {
+        .advanced-grid {
             display: grid;
-            grid-template-columns: 1fr 2fr;
-            gap: 30px;
+            grid-template-columns: 1fr;
+            gap: 20px;
             margin-top: 20px;
         }
 
-        .simulator-controls {
+        .advanced-card {
+            background: rgba(255,255,255,0.1);
+            padding: 20px;
+            border-radius: 12px;
+            backdrop-filter: blur(10px);
+        }
+
+        .advanced-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: white;
+        }
+
+        .conversion-controls, .deadline-controls {
             display: flex;
             flex-direction: column;
-            gap: 15px;
+            gap: 10px;
         }
 
-        .control-group label {
-            color: white;
-            font-weight: 600;
-            margin-bottom: 8px;
-        }
-
-        .control-group input {
+        .conversion-controls input, .deadline-controls input {
             background: rgba(255,255,255,0.1);
             border: 2px solid rgba(255,255,255,0.2);
             color: white;
             border-radius: 8px;
-            padding: 10px;
+            padding: 12px;
+            font-size: 1rem;
         }
 
-        .control-group input::placeholder {
+        .conversion-controls input::placeholder, .deadline-controls input::placeholder {
             color: rgba(255,255,255,0.7);
         }
 
-        .simulator-results {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-            gap: 15px;
+        .convert-btn {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: 2px solid rgba(255,255,255,0.3);
+            padding: 12px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
         }
 
-        .quick-result-card {
+        .convert-btn:hover {
+            background: rgba(255,255,255,0.3);
+        }
+
+        .conversion-result {
             background: rgba(255,255,255,0.1);
             padding: 15px;
-            border-radius: 10px;
+            border-radius: 8px;
+            margin-top: 10px;
+            font-weight: 600;
             text-align: center;
-            backdrop-filter: blur(10px);
+            min-height: 20px;
         }
 
-        .quick-result-rate {
+        .loan-actions {
+            margin-top: 15px;
+        }
+
+        .loan-btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #f39c12, #e67e22);
+            color: white;
+            border: none;
+            border-radius: 10px;
             font-size: 1.1rem;
             font-weight: 600;
-            margin-bottom: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
         }
 
-        .quick-result-value {
-            font-size: 1.3rem;
-            font-weight: 700;
-            color: #f1c40f;
+        .loan-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(243, 156, 18, 0.3);
         }
 
         .statistics-section {
@@ -353,29 +383,16 @@
             font-weight: 500;
         }
 
-        @media (max-width: 768px) {
-            .main-content {
-                grid-template-columns: 1fr;
-                gap: 20px;
-                padding: 20px;
-            }
-            
-            .header h1 {
-                font-size: 2rem;
-            }
-            
-            .preset-buttons {
-                grid-template-columns: repeat(2, 1fr);
-            }
+        .header h1 {
+            font-size: 2rem;
+        }
+        
+        .preset-buttons {
+            grid-template-columns: repeat(2, 1fr);
+        }
 
-            .quick-simulator {
-                grid-template-columns: 1fr;
-                gap: 20px;
-            }
-
-            .stats-grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
+        .stats-grid {
+            grid-template-columns: repeat(2, 1fr);
         }
     </style>
 </head>
@@ -436,6 +453,12 @@
                     <button type="submit" class="calculate-btn">
                         📊 Calcular Empréstimo
                     </button>
+                    
+                    <div class="loan-actions" style="display: none;" id="loanActions">
+                        <button type="button" class="loan-btn" onclick="confirmLoan()">
+                            ✅ Emprestei - Adicionar às Estatísticas
+                        </button>
+                    </div>
                 </form>
             </section>
 
@@ -487,23 +510,27 @@
                 </div>
             </section>
 
-            <section class="simulator-section">
+            <section class="tips-section">
                 <h2 class="section-title" style="color: white;">
-                    🎯 Simulador Rápido
+                    💡 Calculadora Avançada
                 </h2>
-                <div class="quick-simulator">
-                    <div class="simulator-controls">
-                        <div class="control-group">
-                            <label>Valor Base (R$)</label>
-                            <input type="number" id="quickValue" value="1000" min="100" step="100">
-                        </div>
-                        <div class="control-group">
-                            <label>Período (dias)</label>
-                            <input type="number" id="quickPeriod" value="30" min="1" max="365">
+                <div class="advanced-grid">
+                    <div class="advanced-card">
+                        <div class="advanced-title">🔄 Conversão de Taxas</div>
+                        <div class="conversion-controls">
+                            <input type="number" id="monthlyRate" placeholder="Taxa mensal %" step="0.1">
+                            <button onclick="convertRates()" class="convert-btn">Converter</button>
+                            <div id="conversionResult" class="conversion-result"></div>
                         </div>
                     </div>
-                    <div class="simulator-results" id="quickResults">
-                        <!-- Results will be populated by JavaScript -->
+                    <div class="advanced-card">
+                        <div class="advanced-title">📅 Calculadora de Prazo</div>
+                        <div class="deadline-controls">
+                            <input type="date" id="startDate">
+                            <input type="number" id="daysToAdd" placeholder="Dias" min="1">
+                            <button onclick="calculateDeadline()" class="convert-btn">Calcular</button>
+                            <div id="deadlineResult" class="conversion-result"></div>
+                        </div>
                     </div>
                 </div>
             </section>
@@ -555,6 +582,7 @@
             rates: [],
             date: new Date().toDateString()
         };
+        let currentCalculation = null;
 
         // Reset daily stats if it's a new day
         if (dailyStats.date !== new Date().toDateString()) {
@@ -656,24 +684,58 @@
             table.style.display = 'table';
         }
 
-        function updateQuickSimulator() {
-            const value = parseFloat(document.getElementById('quickValue').value) || 1000;
-            const period = parseInt(document.getElementById('quickPeriod').value) || 30;
-            const rates = [20, 25, 30, 35, 40];
+        function convertRates() {
+            const monthlyRate = parseFloat(document.getElementById('monthlyRate').value);
+            if (!monthlyRate) return;
             
-            const resultsContainer = document.getElementById('quickResults');
-            resultsContainer.innerHTML = '';
+            const dailyRate = monthlyRate / 30;
+            const yearlyRate = monthlyRate * 12;
             
-            rates.forEach(rate => {
-                const result = calculateInterest(value, rate, period, 'days', 'simple');
-                const card = document.createElement('div');
-                card.className = 'quick-result-card';
-                card.innerHTML = `
-                    <div class="quick-result-rate">${rate}%</div>
-                    <div class="quick-result-value">${formatCurrency(result.totalAmount)}</div>
-                `;
-                resultsContainer.appendChild(card);
-            });
+            document.getElementById('conversionResult').innerHTML = `
+                <strong>Diária:</strong> ${dailyRate.toFixed(2)}%<br>
+                <strong>Anual:</strong> ${yearlyRate.toFixed(1)}%
+            `;
+        }
+
+        function calculateDeadline() {
+            const startDate = document.getElementById('startDate').value;
+            const daysToAdd = parseInt(document.getElementById('daysToAdd').value);
+            
+            if (!startDate || !daysToAdd) return;
+            
+            const start = new Date(startDate);
+            const end = new Date(start);
+            end.setDate(start.getDate() + daysToAdd);
+            
+            const options = { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+            };
+            
+            document.getElementById('deadlineResult').innerHTML = `
+                <strong>Vencimento:</strong><br>
+                ${end.toLocaleDateString('pt-BR', options)}
+            `;
+        }
+
+        function confirmLoan() {
+            if (currentCalculation) {
+                updateDailyStats(currentCalculation);
+                document.getElementById('loanActions').style.display = 'none';
+                
+                // Show confirmation message
+                const btn = document.querySelector('.loan-btn');
+                const originalText = btn.innerHTML;
+                btn.innerHTML = '✅ Adicionado às Estatísticas!';
+                btn.style.background = '#27ae60';
+                
+                setTimeout(() => {
+                    btn.innerHTML = originalText;
+                    btn.style.background = 'linear-gradient(135deg, #f39c12, #e67e22)';
+                }, 2000);
+            }
         }
 
         function updateDailyStats(calculation) {
@@ -759,8 +821,8 @@
             const comparisonData = generateComparison(principal, period, periodType, interestType, rate);
             displayComparison(comparisonData);
             
-            // Add to history
-            const calculation = {
+            // Store current calculation
+            currentCalculation = {
                 principal: principal,
                 rate: rate,
                 period: period,
@@ -772,18 +834,19 @@
                 date: new Date().toLocaleDateString('pt-BR')
             };
             
-            addToHistory(calculation);
-            updateDailyStats(calculation);
+            // Add to history (always)
+            addToHistory(currentCalculation);
+            
+            // Show loan confirmation button
+            document.getElementById('loanActions').style.display = 'block';
         });
 
-        // Update quick simulator when inputs change
-        document.getElementById('quickValue').addEventListener('input', updateQuickSimulator);
-        document.getElementById('quickPeriod').addEventListener('input', updateQuickSimulator);
+        // Set today's date as default
+        document.getElementById('startDate').value = new Date().toISOString().split('T')[0];
 
         // Load data on page load
         displayHistory();
         displayDailyStats();
-        updateQuickSimulator();
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9909c4b05743009f',t:'MTc2MDgwODY3Ni4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9909e6d18029009f',t:'MTc2MDgxMDA3NC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
