@@ -565,7 +565,10 @@
         </header>
 
         <div class="main-content">
-            <section class="calculator-section">
+            <section class="calculator-section" style="position: relative;">
+                <div id="saveIndicator" style="position: absolute; top: 10px; right: 10px; background: #27ae60; color: white; padding: 5px 10px; border-radius: 15px; font-size: 0.7rem; opacity: 0; transition: opacity 0.3s;">
+                    💾 Dados Salvos
+                </div>
                 <h2 class="section-title">
                     🧮 Calculadora Principal
                 </h2>
@@ -753,9 +756,20 @@
             </section>
 
             <section class="statistics-section">
-                <h2 class="section-title">
-                    📊 Estatísticas do Dia
-                </h2>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h2 class="section-title">
+                        📊 Estatísticas do Dia
+                    </h2>
+                    <div style="display: flex; gap: 10px;">
+                        <button class="convert-btn" onclick="exportData()" style="padding: 8px 15px; font-size: 0.8rem; background: #3498db; border: 2px solid #2980b9;">
+                            📤 Exportar
+                        </button>
+                        <input type="file" id="importFile" accept=".json" style="display: none;" onchange="importData(event)">
+                        <button class="convert-btn" onclick="document.getElementById('importFile').click()" style="padding: 8px 15px; font-size: 0.8rem; background: #e67e22; border: 2px solid #d35400;">
+                            📥 Importar
+                        </button>
+                    </div>
+                </div>
                 <div class="stats-grid">
                     <div class="stat-card">
                         <div class="stat-icon">💰</div>
@@ -791,9 +805,217 @@
     </main>
 
     <script>
-        let calculationHistory = JSON.parse(localStorage.getItem('loanHistory')) || [];
-        let customers = JSON.parse(localStorage.getItem('customers')) || [];
-        let dailyStats = JSON.parse(localStorage.getItem('dailyStats')) || {
+        // Sistema de Banco de Dados Local Avançado
+        class LupinDatabase {
+            constructor() {
+                this.dbName = 'LupinCredDB';
+                this.version = 1;
+                this.db = null;
+                this.init();
+            }
+
+            async init() {
+                try {
+                    // Tenta usar IndexedDB primeiro (mais robusto)
+                    if ('indexedDB' in window) {
+                        await this.initIndexedDB();
+                    } else {
+                        // Fallback para localStorage com backup automático
+                        this.initLocalStorage();
+                    }
+                    this.setupAutoSave();
+                } catch (error) {
+                    console.log('Usando localStorage como fallback');
+                    this.initLocalStorage();
+                }
+            }
+
+            async initIndexedDB() {
+                return new Promise((resolve, reject) => {
+                    const request = indexedDB.open(this.dbName, this.version);
+                    
+                    request.onerror = () => reject(request.error);
+                    request.onsuccess = () => {
+                        this.db = request.result;
+                        resolve();
+                    };
+                    
+                    request.onupgradeneeded = (event) => {
+                        const db = event.target.result;
+                        
+                        // Criar stores se não existirem
+                        if (!db.objectStoreNames.contains('customers')) {
+                            db.createObjectStore('customers', { keyPath: 'id' });
+                        }
+                        if (!db.objectStoreNames.contains('history')) {
+                            db.createObjectStore('history', { keyPath: 'id' });
+                        }
+                        if (!db.objectStoreNames.contains('stats')) {
+                            db.createObjectStore('stats', { keyPath: 'date' });
+                        }
+                    };
+                });
+            }
+
+            initLocalStorage() {
+                // Migrar dados existentes se necessário
+                this.migrateFromLocalStorage();
+            }
+
+            migrateFromLocalStorage() {
+                const oldCustomers = localStorage.getItem('customers');
+                const oldHistory = localStorage.getItem('loanHistory');
+                const oldStats = localStorage.getItem('dailyStats');
+                
+                if (oldCustomers) {
+                    this.saveToStorage('customers', JSON.parse(oldCustomers));
+                }
+                if (oldHistory) {
+                    this.saveToStorage('history', JSON.parse(oldHistory));
+                }
+                if (oldStats) {
+                    this.saveToStorage('stats', JSON.parse(oldStats));
+                }
+            }
+
+            async saveToStorage(store, data) {
+                try {
+                    if (this.db) {
+                        // Usar IndexedDB
+                        const transaction = this.db.transaction([store], 'readwrite');
+                        const objectStore = transaction.objectStore(store);
+                        
+                        if (Array.isArray(data)) {
+                            // Limpar store primeiro
+                            await objectStore.clear();
+                            // Adicionar todos os itens
+                            data.forEach(item => objectStore.add(item));
+                        } else {
+                            objectStore.put(data);
+                        }
+                    } else {
+                        // Fallback para localStorage
+                        localStorage.setItem(`lupinDB_${store}`, JSON.stringify(data));
+                    }
+                    this.showSaveIndicator();
+                } catch (error) {
+                    // Fallback para localStorage em caso de erro
+                    localStorage.setItem(`lupinDB_${store}`, JSON.stringify(data));
+                    this.showSaveIndicator();
+                }
+            }
+
+            async loadFromStorage(store) {
+                try {
+                    if (this.db) {
+                        // Usar IndexedDB
+                        return new Promise((resolve) => {
+                            const transaction = this.db.transaction([store], 'readonly');
+                            const objectStore = transaction.objectStore(store);
+                            const request = objectStore.getAll();
+                            
+                            request.onsuccess = () => resolve(request.result || []);
+                            request.onerror = () => {
+                                // Fallback para localStorage
+                                const data = localStorage.getItem(`lupinDB_${store}`);
+                                resolve(data ? JSON.parse(data) : []);
+                            };
+                        });
+                    } else {
+                        // Usar localStorage
+                        const data = localStorage.getItem(`lupinDB_${store}`);
+                        return data ? JSON.parse(data) : [];
+                    }
+                } catch (error) {
+                    // Fallback final
+                    const data = localStorage.getItem(`lupinDB_${store}`);
+                    return data ? JSON.parse(data) : [];
+                }
+            }
+
+            setupAutoSave() {
+                // Salvar dados a cada 30 segundos
+                setInterval(() => {
+                    this.autoSave();
+                }, 30000);
+
+                // Salvar antes de fechar a página
+                window.addEventListener('beforeunload', () => {
+                    this.autoSave();
+                });
+
+                // Salvar quando a página perde o foco
+                window.addEventListener('blur', () => {
+                    this.autoSave();
+                });
+            }
+
+            autoSave() {
+                if (customers.length > 0) {
+                    this.saveToStorage('customers', customers);
+                }
+                if (calculationHistory.length > 0) {
+                    this.saveToStorage('history', calculationHistory);
+                }
+                this.saveToStorage('stats', dailyStats);
+            }
+
+            showSaveIndicator() {
+                const indicator = document.getElementById('saveIndicator');
+                if (indicator) {
+                    indicator.style.opacity = '1';
+                    setTimeout(() => {
+                        indicator.style.opacity = '0';
+                    }, 2000);
+                }
+            }
+
+            async exportAllData() {
+                const data = {
+                    customers: await this.loadFromStorage('customers'),
+                    history: await this.loadFromStorage('history'),
+                    stats: await this.loadFromStorage('stats'),
+                    exportDate: new Date().toISOString(),
+                    version: '1.0'
+                };
+                return data;
+            }
+
+            async importAllData(data) {
+                try {
+                    if (data.customers) {
+                        await this.saveToStorage('customers', data.customers);
+                        customers = data.customers;
+                    }
+                    if (data.history) {
+                        await this.saveToStorage('history', data.history);
+                        calculationHistory = data.history;
+                    }
+                    if (data.stats) {
+                        await this.saveToStorage('stats', data.stats);
+                        dailyStats = data.stats;
+                    }
+                    
+                    // Atualizar displays
+                    displayCustomers();
+                    displayHistory();
+                    displayDailyStats();
+                    
+                    return true;
+                } catch (error) {
+                    console.error('Erro ao importar dados:', error);
+                    return false;
+                }
+            }
+        }
+
+        // Inicializar banco de dados
+        const lupinDB = new LupinDatabase();
+
+        // Variáveis globais
+        let calculationHistory = [];
+        let customers = [];
+        let dailyStats = {
             totalLoaned: 0,
             totalProfit: 0,
             totalCalculations: 0,
@@ -801,6 +1023,103 @@
             date: new Date().toDateString()
         };
         let currentCalculation = null;
+
+        // Carregar dados na inicialização
+        async function loadAllData() {
+            try {
+                customers = await lupinDB.loadFromStorage('customers') || [];
+                calculationHistory = await lupinDB.loadFromStorage('history') || [];
+                const loadedStats = await lupinDB.loadFromStorage('stats');
+                
+                if (loadedStats && loadedStats.length > 0) {
+                    dailyStats = loadedStats[0];
+                }
+
+                // Reset daily stats if it's a new day
+                if (dailyStats.date !== new Date().toDateString()) {
+                    dailyStats = {
+                        totalLoaned: 0,
+                        totalProfit: 0,
+                        totalCalculations: 0,
+                        rates: [],
+                        date: new Date().toDateString()
+                    };
+                    await lupinDB.saveToStorage('stats', dailyStats);
+                }
+            } catch (error) {
+                console.log('Carregando dados do localStorage como fallback');
+                // Fallback para localStorage antigo
+                calculationHistory = JSON.parse(localStorage.getItem('loanHistory')) || [];
+                customers = JSON.parse(localStorage.getItem('customers')) || [];
+                dailyStats = JSON.parse(localStorage.getItem('dailyStats')) || {
+                    totalLoaned: 0,
+                    totalProfit: 0,
+                    totalCalculations: 0,
+                    rates: [],
+                    date: new Date().toDateString()
+                };
+            }
+        }
+
+        // Funções de exportação e importação
+        async function exportData() {
+            try {
+                const data = await lupinDB.exportAllData();
+                const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `lupin-cred-backup-${new Date().toISOString().split('T')[0]}.json`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                
+                // Mostrar confirmação
+                const btn = event.target;
+                const originalText = btn.textContent;
+                btn.textContent = '✅ Exportado!';
+                btn.style.background = '#27ae60';
+                
+                setTimeout(() => {
+                    btn.textContent = originalText;
+                    btn.style.background = '#3498db';
+                }, 2000);
+            } catch (error) {
+                alert('Erro ao exportar dados. Tente novamente.');
+            }
+        }
+
+        async function importData(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            try {
+                const text = await file.text();
+                const data = JSON.parse(text);
+                
+                if (await lupinDB.importAllData(data)) {
+                    // Mostrar confirmação
+                    const btn = document.querySelector('[onclick="document.getElementById(\'importFile\').click()"]');
+                    const originalText = btn.textContent;
+                    btn.textContent = '✅ Importado!';
+                    btn.style.background = '#27ae60';
+                    
+                    setTimeout(() => {
+                        btn.textContent = originalText;
+                        btn.style.background = '#e67e22';
+                    }, 2000);
+                } else {
+                    alert('Erro ao importar dados. Verifique o arquivo.');
+                }
+            } catch (error) {
+                alert('Arquivo inválido. Selecione um backup válido do Lupin Cred.');
+            }
+            
+            // Limpar input
+            event.target.value = '';
+        }
 
         // Reset daily stats if it's a new day
         if (dailyStats.date !== new Date().toDateString()) {
@@ -971,7 +1290,7 @@
             document.getElementById('loanActions').style.display = 'block';
         }
 
-        function addCustomer(customerData) {
+        async function addCustomer(customerData) {
             const customer = {
                 id: Date.now(),
                 ...customerData,
@@ -980,7 +1299,7 @@
             };
             
             customers.unshift(customer);
-            localStorage.setItem('customers', JSON.stringify(customers));
+            await lupinDB.saveToStorage('customers', customers);
             displayCustomers();
             updateDailyStats(currentCalculation);
         }
@@ -1045,12 +1364,12 @@
             }).join('');
         }
 
-        function markAsPaid(customerId) {
+        async function markAsPaid(customerId) {
             const customer = customers.find(c => c.id === customerId);
             if (customer) {
                 customer.status = 'paid';
                 customer.paidDate = new Date().toLocaleDateString('pt-BR');
-                localStorage.setItem('customers', JSON.stringify(customers));
+                await lupinDB.saveToStorage('customers', customers);
                 displayCustomers();
                 
                 // Show success message
@@ -1077,25 +1396,25 @@
             window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
         }
 
-        function deleteCustomer(customerId) {
+        async function deleteCustomer(customerId) {
             customers = customers.filter(c => c.id !== customerId);
-            localStorage.setItem('customers', JSON.stringify(customers));
+            await lupinDB.saveToStorage('customers', customers);
             displayCustomers();
         }
 
-        function clearCustomers() {
+        async function clearCustomers() {
             customers = [];
-            localStorage.removeItem('customers');
+            await lupinDB.saveToStorage('customers', []);
             displayCustomers();
         }
 
-        function updateDailyStats(calculation) {
+        async function updateDailyStats(calculation) {
             dailyStats.totalLoaned += calculation.principal;
             dailyStats.totalProfit += calculation.interestEarned;
             dailyStats.totalCalculations += 1;
             dailyStats.rates.push(calculation.rate);
             
-            localStorage.setItem('dailyStats', JSON.stringify(dailyStats));
+            await lupinDB.saveToStorage('stats', dailyStats);
             displayDailyStats();
         }
 
@@ -1110,12 +1429,13 @@
             document.getElementById('avgRate').textContent = avgRate.toFixed(1) + '%';
         }
 
-        function addToHistory(calculation) {
+        async function addToHistory(calculation) {
+            calculation.id = Date.now(); // Adicionar ID único
             calculationHistory.unshift(calculation);
             if (calculationHistory.length > 10) {
                 calculationHistory = calculationHistory.slice(0, 10);
             }
-            localStorage.setItem('loanHistory', JSON.stringify(calculationHistory));
+            await lupinDB.saveToStorage('history', calculationHistory);
             displayHistory();
         }
 
@@ -1142,9 +1462,9 @@
             `).join('');
         }
 
-        function clearHistory() {
+        async function clearHistory() {
             calculationHistory = [];
-            localStorage.removeItem('loanHistory');
+            await lupinDB.saveToStorage('history', []);
             displayHistory();
         }
 
@@ -1251,9 +1571,12 @@
         document.getElementById('startDate').value = new Date().toISOString().split('T')[0];
 
         // Load data on page load
-        displayHistory();
-        displayDailyStats();
-        displayCustomers();
+        window.addEventListener('load', async () => {
+            await loadAllData();
+            displayHistory();
+            displayDailyStats();
+            displayCustomers();
+        });
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'990a4fb9945a009f',t:'MTc2MDgxNDM3MS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'990a7526d395009f',t:'MTc2MDgxNTkwNC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
