@@ -758,7 +758,7 @@
             <section class="statistics-section">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                     <h2 class="section-title">
-                        📊 Estatísticas do Dia
+                        📊 Estatísticas
                     </h2>
                     <div style="display: flex; gap: 10px;">
                         <button class="convert-btn" onclick="exportData()" style="padding: 8px 15px; font-size: 0.8rem; background: #3498db; border: 2px solid #2980b9;">
@@ -768,6 +768,33 @@
                         <button class="convert-btn" onclick="document.getElementById('importFile').click()" style="padding: 8px 15px; font-size: 0.8rem; background: #e67e22; border: 2px solid #d35400;">
                             📥 Importar
                         </button>
+                        <button class="convert-btn" onclick="resetStatistics()" style="padding: 8px 15px; font-size: 0.8rem; background: #e74c3c; border: 2px solid #c0392b;">
+                            🗑️ Reset
+                        </button>
+                    </div>
+                </div>
+                
+                <div style="background: white; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #e9ecef;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr auto; gap: 10px; align-items: end;">
+                        <div>
+                            <label for="startDateFilter" style="display: block; margin-bottom: 5px; font-weight: 600; color: #495057; font-size: 0.85rem;">Data Inicial</label>
+                            <input type="date" id="startDateFilter" style="width: 100%; padding: 8px; border: 1px solid #dee2e6; border-radius: 6px; font-size: 0.9rem;">
+                        </div>
+                        <div>
+                            <label for="endDateFilter" style="display: block; margin-bottom: 5px; font-weight: 600; color: #495057; font-size: 0.85rem;">Data Final</label>
+                            <input type="date" id="endDateFilter" style="width: 100%; padding: 8px; border: 1px solid #dee2e6; border-radius: 6px; font-size: 0.9rem;">
+                        </div>
+                        <div style="display: flex; gap: 5px;">
+                            <button onclick="filterStatistics()" style="padding: 8px 15px; background: #3498db; color: white; border: none; border-radius: 6px; font-size: 0.8rem; font-weight: 600; cursor: pointer;">
+                                🔍 Filtrar
+                            </button>
+                            <button onclick="clearDateFilter()" style="padding: 8px 15px; background: #6c757d; color: white; border: none; border-radius: 6px; font-size: 0.8rem; font-weight: 600; cursor: pointer;">
+                                ✖️ Limpar
+                            </button>
+                        </div>
+                    </div>
+                    <div id="dateRangeInfo" style="margin-top: 10px; padding: 8px; background: #e3f2fd; border-radius: 4px; font-size: 0.8rem; color: #1565c0; display: none;">
+                        📅 Mostrando dados de <span id="dateRangeText"></span>
                     </div>
                 </div>
                 <div class="stats-grid">
@@ -974,9 +1001,9 @@
                 const data = {
                     customers: await this.loadFromStorage('customers'),
                     history: await this.loadFromStorage('history'),
-                    stats: await this.loadFromStorage('stats'),
+                    allStats: await this.loadFromStorage('allStats'),
                     exportDate: new Date().toISOString(),
-                    version: '1.0'
+                    version: '2.0'
                 };
                 return data;
             }
@@ -991,15 +1018,32 @@
                         await this.saveToStorage('history', data.history);
                         calculationHistory = data.history;
                     }
-                    if (data.stats) {
-                        await this.saveToStorage('stats', data.stats);
+                    
+                    // Compatibilidade com versões antigas
+                    if (data.allStats) {
+                        await this.saveToStorage('allStats', data.allStats);
+                        allStats = data.allStats;
+                        // Encontrar estatísticas do dia atual
+                        const today = new Date().toDateString();
+                        dailyStats = allStats.find(stat => stat.date === today) || {
+                            totalLoaned: 0,
+                            totalProfit: 0,
+                            totalCalculations: 0,
+                            rates: [],
+                            date: today
+                        };
+                    } else if (data.stats) {
+                        // Importar formato antigo
+                        allStats = [data.stats];
                         dailyStats = data.stats;
+                        await this.saveToStorage('allStats', allStats);
                     }
                     
                     // Atualizar displays
                     displayCustomers();
                     displayHistory();
                     displayDailyStats();
+                    clearDateFilter();
                     
                     return true;
                 } catch (error) {
@@ -1015,6 +1059,7 @@
         // Variáveis globais
         let calculationHistory = [];
         let customers = [];
+        let allStats = []; // Array para armazenar estatísticas de múltiplas datas
         let dailyStats = {
             totalLoaned: 0,
             totalProfit: 0,
@@ -1023,41 +1068,54 @@
             date: new Date().toDateString()
         };
         let currentCalculation = null;
+        let currentStatsFilter = null; // Para controlar o filtro atual
 
         // Carregar dados na inicialização
         async function loadAllData() {
             try {
                 customers = await lupinDB.loadFromStorage('customers') || [];
                 calculationHistory = await lupinDB.loadFromStorage('history') || [];
-                const loadedStats = await lupinDB.loadFromStorage('stats');
+                allStats = await lupinDB.loadFromStorage('allStats') || [];
                 
-                if (loadedStats && loadedStats.length > 0) {
-                    dailyStats = loadedStats[0];
-                }
-
-                // Reset daily stats if it's a new day
-                if (dailyStats.date !== new Date().toDateString()) {
-                    dailyStats = {
+                // Encontrar ou criar estatísticas do dia atual
+                const today = new Date().toDateString();
+                let todayStats = allStats.find(stat => stat.date === today);
+                
+                if (!todayStats) {
+                    todayStats = {
                         totalLoaned: 0,
                         totalProfit: 0,
                         totalCalculations: 0,
                         rates: [],
-                        date: new Date().toDateString()
+                        date: today
                     };
-                    await lupinDB.saveToStorage('stats', dailyStats);
+                    allStats.push(todayStats);
+                    await lupinDB.saveToStorage('allStats', allStats);
                 }
+                
+                dailyStats = todayStats;
             } catch (error) {
                 console.log('Carregando dados do localStorage como fallback');
                 // Fallback para localStorage antigo
                 calculationHistory = JSON.parse(localStorage.getItem('loanHistory')) || [];
                 customers = JSON.parse(localStorage.getItem('customers')) || [];
-                dailyStats = JSON.parse(localStorage.getItem('dailyStats')) || {
-                    totalLoaned: 0,
-                    totalProfit: 0,
-                    totalCalculations: 0,
-                    rates: [],
-                    date: new Date().toDateString()
-                };
+                const oldStats = JSON.parse(localStorage.getItem('dailyStats'));
+                
+                if (oldStats) {
+                    allStats = [oldStats];
+                    dailyStats = oldStats;
+                } else {
+                    const today = new Date().toDateString();
+                    dailyStats = {
+                        totalLoaned: 0,
+                        totalProfit: 0,
+                        totalCalculations: 0,
+                        rates: [],
+                        date: today
+                    };
+                    allStats = [dailyStats];
+                }
+                await lupinDB.saveToStorage('allStats', allStats);
             }
         }
 
@@ -1414,19 +1472,129 @@
             dailyStats.totalCalculations += 1;
             dailyStats.rates.push(calculation.rate);
             
-            await lupinDB.saveToStorage('stats', dailyStats);
+            // Atualizar no array de todas as estatísticas
+            const index = allStats.findIndex(stat => stat.date === dailyStats.date);
+            if (index !== -1) {
+                allStats[index] = dailyStats;
+            }
+            
+            await lupinDB.saveToStorage('allStats', allStats);
             displayDailyStats();
         }
 
-        function displayDailyStats() {
-            document.getElementById('totalLoaned').textContent = formatCurrency(dailyStats.totalLoaned);
-            document.getElementById('totalProfit').textContent = formatCurrency(dailyStats.totalProfit);
-            document.getElementById('totalCalculations').textContent = dailyStats.totalCalculations;
+        function displayDailyStats(statsToShow = null) {
+            const stats = statsToShow || dailyStats;
             
-            const avgRate = dailyStats.rates.length > 0 
-                ? dailyStats.rates.reduce((a, b) => a + b, 0) / dailyStats.rates.length 
+            document.getElementById('totalLoaned').textContent = formatCurrency(stats.totalLoaned);
+            document.getElementById('totalProfit').textContent = formatCurrency(stats.totalProfit);
+            document.getElementById('totalCalculations').textContent = stats.totalCalculations;
+            
+            const avgRate = stats.rates && stats.rates.length > 0 
+                ? stats.rates.reduce((a, b) => a + b, 0) / stats.rates.length 
                 : 0;
             document.getElementById('avgRate').textContent = avgRate.toFixed(1) + '%';
+        }
+
+        function filterStatistics() {
+            const startDate = document.getElementById('startDateFilter').value;
+            const endDate = document.getElementById('endDateFilter').value;
+            
+            if (!startDate || !endDate) {
+                alert('Por favor, selecione as datas inicial e final');
+                return;
+            }
+            
+            if (new Date(startDate) > new Date(endDate)) {
+                alert('A data inicial deve ser anterior à data final');
+                return;
+            }
+            
+            // Filtrar estatísticas por período
+            const filteredStats = allStats.filter(stat => {
+                const statDate = new Date(stat.date);
+                const start = new Date(startDate);
+                const end = new Date(endDate);
+                return statDate >= start && statDate <= end;
+            });
+            
+            // Consolidar estatísticas do período
+            const consolidatedStats = {
+                totalLoaned: 0,
+                totalProfit: 0,
+                totalCalculations: 0,
+                rates: []
+            };
+            
+            filteredStats.forEach(stat => {
+                consolidatedStats.totalLoaned += stat.totalLoaned || 0;
+                consolidatedStats.totalProfit += stat.totalProfit || 0;
+                consolidatedStats.totalCalculations += stat.totalCalculations || 0;
+                if (stat.rates && stat.rates.length > 0) {
+                    consolidatedStats.rates.push(...stat.rates);
+                }
+            });
+            
+            // Mostrar estatísticas consolidadas
+            displayDailyStats(consolidatedStats);
+            
+            // Mostrar informação do período
+            const dateRangeInfo = document.getElementById('dateRangeInfo');
+            const dateRangeText = document.getElementById('dateRangeText');
+            
+            const startFormatted = new Date(startDate).toLocaleDateString('pt-BR');
+            const endFormatted = new Date(endDate).toLocaleDateString('pt-BR');
+            
+            dateRangeText.textContent = `${startFormatted} até ${endFormatted}`;
+            dateRangeInfo.style.display = 'block';
+            
+            currentStatsFilter = { startDate, endDate, stats: consolidatedStats };
+        }
+
+        function clearDateFilter() {
+            document.getElementById('startDateFilter').value = '';
+            document.getElementById('endDateFilter').value = '';
+            document.getElementById('dateRangeInfo').style.display = 'none';
+            
+            // Voltar para estatísticas do dia atual
+            displayDailyStats();
+            currentStatsFilter = null;
+        }
+
+        async function resetStatistics() {
+            const confirmReset = confirm('⚠️ ATENÇÃO!\n\nIsso irá apagar TODAS as estatísticas salvas permanentemente.\n\nTem certeza que deseja continuar?');
+            
+            if (confirmReset) {
+                const doubleConfirm = confirm('🚨 ÚLTIMA CONFIRMAÇÃO!\n\nTodos os dados de estatísticas serão perdidos para sempre.\n\nConfirma o reset completo?');
+                
+                if (doubleConfirm) {
+                    // Reset completo das estatísticas
+                    const today = new Date().toDateString();
+                    dailyStats = {
+                        totalLoaned: 0,
+                        totalProfit: 0,
+                        totalCalculations: 0,
+                        rates: [],
+                        date: today
+                    };
+                    
+                    allStats = [dailyStats];
+                    await lupinDB.saveToStorage('allStats', allStats);
+                    
+                    // Limpar filtros
+                    clearDateFilter();
+                    
+                    // Mostrar confirmação
+                    const btn = event.target;
+                    const originalText = btn.textContent;
+                    btn.textContent = '✅ Resetado!';
+                    btn.style.background = '#27ae60';
+                    
+                    setTimeout(() => {
+                        btn.textContent = originalText;
+                        btn.style.background = '#e74c3c';
+                    }, 2000);
+                }
+            }
         }
 
         async function addToHistory(calculation) {
@@ -1569,6 +1737,14 @@
 
         // Set today's date as default
         document.getElementById('startDate').value = new Date().toISOString().split('T')[0];
+        
+        // Set default dates for statistics filter (last 30 days)
+        const today = new Date();
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(today.getDate() - 30);
+        
+        document.getElementById('endDateFilter').value = today.toISOString().split('T')[0];
+        document.getElementById('startDateFilter').value = thirtyDaysAgo.toISOString().split('T')[0];
 
         // Load data on page load
         window.addEventListener('load', async () => {
@@ -1578,5 +1754,5 @@
             displayCustomers();
         });
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'990a7526d395009f',t:'MTc2MDgxNTkwNC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'990a7dd2b2e9009f',t:'MTc2MDgxNjI1OS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
