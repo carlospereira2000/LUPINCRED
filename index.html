@@ -94,7 +94,7 @@
             font-size: 0.85rem;
         }
 
-        input, select {
+        input, select, textarea {
             width: 100%;
             padding: 10px 12px;
             border: 1px solid #dee2e6;
@@ -104,7 +104,12 @@
             box-sizing: border-box;
         }
 
-        input:focus, select:focus {
+        textarea {
+            resize: vertical;
+            min-height: 60px;
+        }
+
+        input:focus, select:focus, textarea:focus {
             outline: none;
             border-color: #3498db;
             box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
@@ -401,6 +406,144 @@
             font-weight: 500;
         }
 
+        .customer-section {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            color: white;
+            padding: 15px 10px;
+            border-radius: 10px;
+            width: 100%;
+            max-width: 100%;
+        }
+
+        .customer-section input, .customer-section textarea {
+            background: rgba(255,255,255,0.1);
+            border: 2px solid rgba(255,255,255,0.2);
+            color: white;
+            border-radius: 8px;
+            padding: 12px;
+            font-size: 0.9rem;
+        }
+
+        .customer-section input::placeholder, .customer-section textarea::placeholder {
+            color: rgba(255,255,255,0.7);
+        }
+
+        .customer-section label {
+            color: white;
+        }
+
+        .customers-list {
+            background: #f8f9fa;
+            padding: 15px 10px;
+            border-radius: 10px;
+            border: 1px solid #e9ecef;
+            width: 100%;
+            max-width: 100%;
+        }
+
+        .customer-card {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            border-left: 4px solid #e74c3c;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .customer-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .customer-name {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #2c3e50;
+        }
+
+        .customer-debt {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #e74c3c;
+        }
+
+        .customer-info {
+            font-size: 0.8rem;
+            color: #6c757d;
+            margin-bottom: 5px;
+        }
+
+        .due-date {
+            background: #fff3cd;
+            color: #856404;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            display: inline-block;
+            margin-top: 5px;
+        }
+
+        .overdue {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .customer-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .action-btn {
+            padding: 8px 15px;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .paid-btn {
+            background: #27ae60;
+            color: white;
+        }
+
+        .paid-btn:hover {
+            background: #219a52;
+        }
+
+        .contact-btn {
+            background: #3498db;
+            color: white;
+        }
+
+        .contact-btn:hover {
+            background: #2980b9;
+        }
+
+        .delete-btn {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .delete-btn:hover {
+            background: #c0392b;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .form-row-full {
+            grid-column: 1 / -1;
+        }
+
         .header h1 {
             font-size: 2rem;
         }
@@ -473,8 +616,8 @@
                     </button>
                     
                     <div class="loan-actions" style="display: none;" id="loanActions">
-                        <button type="button" class="loan-btn" onclick="confirmLoan()">
-                            ✅ Emprestei - Adicionar às Estatísticas
+                        <button type="button" class="loan-btn" onclick="showCustomerForm()">
+                            👤 Cadastrar Cliente e Emprestar
                         </button>
                     </div>
                 </form>
@@ -514,6 +657,62 @@
                     <tbody id="comparisonBody">
                     </tbody>
                 </table>
+            </section>
+
+            <section class="customer-section" id="customerSection" style="display: none;">
+                <h2 class="section-title" style="color: white;">
+                    👤 Cadastro do Cliente
+                </h2>
+                
+                <form id="customerForm">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="customerName">Nome Completo *</label>
+                            <input type="text" id="customerName" placeholder="Ex: João Silva" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="customerPhone">Celular *</label>
+                            <input type="tel" id="customerPhone" placeholder="(11) 99999-9999" required>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="customerCpf">CPF (opcional)</label>
+                            <input type="text" id="customerCpf" placeholder="000.000.000-00">
+                        </div>
+                        <div class="form-group">
+                            <label for="dueDate">Data de Cobrança *</label>
+                            <input type="date" id="dueDate" required>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="customerAddress">Endereço (opcional)</label>
+                        <textarea id="customerAddress" placeholder="Rua, número, bairro, cidade..."></textarea>
+                    </div>
+                    
+                    <div style="display: flex; gap: 10px; margin-top: 20px;">
+                        <button type="submit" class="calculate-btn" style="flex: 1;">
+                            ✅ Confirmar Empréstimo
+                        </button>
+                        <button type="button" class="clear-history" onclick="hideCustomerForm()" style="flex: 0 0 auto;">
+                            Cancelar
+                        </button>
+                    </div>
+                </form>
+            </section>
+
+            <section class="customers-list">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h2 class="section-title">
+                        👥 Clientes Ativos
+                    </h2>
+                    <button class="clear-history" onclick="clearCustomers()">Limpar Todos</button>
+                </div>
+                <div id="customersContainer">
+                    <p style="text-align: center; color: #6c757d; font-style: italic;">Nenhum cliente cadastrado ainda</p>
+                </div>
             </section>
 
             <section class="history-section">
@@ -593,6 +792,7 @@
 
     <script>
         let calculationHistory = JSON.parse(localStorage.getItem('loanHistory')) || [];
+        let customers = JSON.parse(localStorage.getItem('customers')) || [];
         let dailyStats = JSON.parse(localStorage.getItem('dailyStats')) || {
             totalLoaned: 0,
             totalProfit: 0,
@@ -630,6 +830,22 @@
                 style: 'percent',
                 minimumFractionDigits: 2
             }).format(value / 100);
+        }
+
+        function formatPhone(phone) {
+            const cleaned = phone.replace(/\D/g, '');
+            if (cleaned.length === 11) {
+                return `(${cleaned.slice(0,2)}) ${cleaned.slice(2,7)}-${cleaned.slice(7)}`;
+            }
+            return phone;
+        }
+
+        function formatCPF(cpf) {
+            const cleaned = cpf.replace(/\D/g, '');
+            if (cleaned.length === 11) {
+                return `${cleaned.slice(0,3)}.${cleaned.slice(3,6)}.${cleaned.slice(6,9)}-${cleaned.slice(9)}`;
+            }
+            return cpf;
         }
 
         function calculateInterest(principal, rate, period, periodType, interestType) {
@@ -738,22 +954,139 @@
             `;
         }
 
-        function confirmLoan() {
+        function showCustomerForm() {
             if (currentCalculation) {
-                updateDailyStats(currentCalculation);
+                document.getElementById('customerSection').style.display = 'block';
                 document.getElementById('loanActions').style.display = 'none';
                 
-                // Show confirmation message
-                const btn = document.querySelector('.loan-btn');
-                const originalText = btn.innerHTML;
-                btn.innerHTML = '✅ Adicionado às Estatísticas!';
-                btn.style.background = '#27ae60';
+                // Set default due date (30 days from today)
+                const dueDate = new Date();
+                dueDate.setDate(dueDate.getDate() + 30);
+                document.getElementById('dueDate').value = dueDate.toISOString().split('T')[0];
+            }
+        }
+
+        function hideCustomerForm() {
+            document.getElementById('customerSection').style.display = 'none';
+            document.getElementById('loanActions').style.display = 'block';
+        }
+
+        function addCustomer(customerData) {
+            const customer = {
+                id: Date.now(),
+                ...customerData,
+                loanDate: new Date().toLocaleDateString('pt-BR'),
+                status: 'active'
+            };
+            
+            customers.unshift(customer);
+            localStorage.setItem('customers', JSON.stringify(customers));
+            displayCustomers();
+            updateDailyStats(currentCalculation);
+        }
+
+        function displayCustomers() {
+            const container = document.getElementById('customersContainer');
+            
+            if (customers.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: #6c757d; font-style: italic;">Nenhum cliente cadastrado ainda</p>';
+                return;
+            }
+            
+            const activeCustomers = customers.filter(c => c.status === 'active');
+            
+            if (activeCustomers.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: #6c757d; font-style: italic;">Todos os empréstimos foram quitados</p>';
+                return;
+            }
+            
+            container.innerHTML = activeCustomers.map(customer => {
+                const dueDate = new Date(customer.dueDate);
+                const today = new Date();
+                const isOverdue = dueDate < today;
+                const dueDateClass = isOverdue ? 'overdue' : '';
+                
+                return `
+                    <div class="customer-card">
+                        <div class="customer-header">
+                            <div class="customer-name">${customer.name}</div>
+                            <div class="customer-debt">${formatCurrency(customer.totalAmount)}</div>
+                        </div>
+                        
+                        <div class="customer-info">
+                            📱 ${formatPhone(customer.phone)}
+                            ${customer.cpf ? `• 📄 ${formatCPF(customer.cpf)}` : ''}
+                        </div>
+                        
+                        ${customer.address ? `<div class="customer-info">📍 ${customer.address}</div>` : ''}
+                        
+                        <div class="customer-info">
+                            💰 Emprestado: ${formatCurrency(customer.principal)} • 
+                            📈 Juros: ${formatCurrency(customer.interestEarned)} (${customer.rate}%)
+                        </div>
+                        
+                        <div class="due-date ${dueDateClass}">
+                            ${isOverdue ? '⚠️ Vencido em' : '📅 Vence em'} ${dueDate.toLocaleDateString('pt-BR')}
+                        </div>
+                        
+                        <div class="customer-actions">
+                            <button class="action-btn paid-btn" onclick="markAsPaid(${customer.id})">
+                                ✅ Pago
+                            </button>
+                            <button class="action-btn contact-btn" onclick="contactCustomer('${customer.phone}', '${customer.name}', ${customer.totalAmount})">
+                                📱 Contatar
+                            </button>
+                            <button class="action-btn delete-btn" onclick="deleteCustomer(${customer.id})">
+                                🗑️ Excluir
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function markAsPaid(customerId) {
+            const customer = customers.find(c => c.id === customerId);
+            if (customer) {
+                customer.status = 'paid';
+                customer.paidDate = new Date().toLocaleDateString('pt-BR');
+                localStorage.setItem('customers', JSON.stringify(customers));
+                displayCustomers();
+                
+                // Show success message
+                const customerCard = event.target.closest('.customer-card');
+                customerCard.style.background = '#d4edda';
+                customerCard.innerHTML = `
+                    <div style="text-align: center; padding: 20px; color: #155724;">
+                        <h3>✅ Empréstimo Quitado!</h3>
+                        <p><strong>${customer.name}</strong> pagou ${formatCurrency(customer.totalAmount)}</p>
+                        <p>Lucro obtido: ${formatCurrency(customer.interestEarned)}</p>
+                    </div>
+                `;
                 
                 setTimeout(() => {
-                    btn.innerHTML = originalText;
-                    btn.style.background = 'linear-gradient(135deg, #f39c12, #e67e22)';
-                }, 2000);
+                    displayCustomers();
+                }, 3000);
             }
+        }
+
+        function contactCustomer(phone, name, amount) {
+            const cleanPhone = phone.replace(/\D/g, '');
+            const message = `Olá ${name}! Lembrete sobre seu empréstimo no valor de ${formatCurrency(amount)}. Entre em contato para acertarmos. Obrigado!`;
+            const whatsappUrl = `https://wa.me/55${cleanPhone}?text=${encodeURIComponent(message)}`;
+            window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
+        }
+
+        function deleteCustomer(customerId) {
+            customers = customers.filter(c => c.id !== customerId);
+            localStorage.setItem('customers', JSON.stringify(customers));
+            displayCustomers();
+        }
+
+        function clearCustomers() {
+            customers = [];
+            localStorage.removeItem('customers');
+            displayCustomers();
         }
 
         function updateDailyStats(calculation) {
@@ -815,6 +1148,7 @@
             displayHistory();
         }
 
+        // Event Listeners
         document.getElementById('loanForm').addEventListener('submit', function(e) {
             e.preventDefault();
             
@@ -859,12 +1193,67 @@
             document.getElementById('loanActions').style.display = 'block';
         });
 
+        document.getElementById('customerForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const customerData = {
+                name: document.getElementById('customerName').value,
+                phone: document.getElementById('customerPhone').value,
+                cpf: document.getElementById('customerCpf').value,
+                address: document.getElementById('customerAddress').value,
+                dueDate: document.getElementById('dueDate').value,
+                ...currentCalculation
+            };
+            
+            addCustomer(customerData);
+            
+            // Reset form and hide section
+            document.getElementById('customerForm').reset();
+            document.getElementById('customerSection').style.display = 'none';
+            document.getElementById('loanActions').style.display = 'none';
+            
+            // Show success message
+            const btn = document.querySelector('.loan-btn');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '✅ Cliente Cadastrado com Sucesso!';
+            btn.style.background = '#27ae60';
+            
+            setTimeout(() => {
+                btn.innerHTML = originalText;
+                btn.style.background = 'linear-gradient(135deg, #f39c12, #e67e22)';
+                document.getElementById('loanActions').style.display = 'block';
+            }, 3000);
+        });
+
+        // Auto-format phone input
+        document.getElementById('customerPhone').addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, '');
+            if (value.length <= 11) {
+                if (value.length > 6) {
+                    value = value.replace(/(\d{2})(\d{5})(\d{0,4})/, '($1) $2-$3');
+                } else if (value.length > 2) {
+                    value = value.replace(/(\d{2})(\d{0,5})/, '($1) $2');
+                }
+                e.target.value = value;
+            }
+        });
+
+        // Auto-format CPF input
+        document.getElementById('customerCpf').addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, '');
+            if (value.length <= 11) {
+                value = value.replace(/(\d{3})(\d{3})(\d{3})(\d{0,2})/, '$1.$2.$3-$4');
+                e.target.value = value;
+            }
+        });
+
         // Set today's date as default
         document.getElementById('startDate').value = new Date().toISOString().split('T')[0];
 
         // Load data on page load
         displayHistory();
         displayDailyStats();
+        displayCustomers();
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9909f5d070d9009f',t:'MTc2MDgxMDY4OC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'990a4fb9945a009f',t:'MTc2MDgxNDM3MS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
