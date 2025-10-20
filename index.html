@@ -1635,9 +1635,16 @@
             <section class="customers-list">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                     <h2 class="section-title">
-                        👥 Clientes Ativos
+                        👥 Clientes
                     </h2>
-                    <button class="clear-history" onclick="clearCustomers()">Limpar Todos</button>
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <select id="customerFilter" onchange="filterCustomers()" style="padding: 8px 12px; border: 1px solid #dee2e6; border-radius: 6px; font-size: 0.9rem; background: white;">
+                            <option value="active">🟢 Ativos</option>
+                            <option value="paid">✅ Pagos</option>
+                            <option value="all">📋 Todos</option>
+                        </select>
+                        <button class="clear-history" onclick="clearCustomers()">Limpar Todos</button>
+                    </div>
                 </div>
                 <div id="customersContainer">
                     <p style="text-align: center; color: #6c757d; font-style: italic;">Nenhum cliente cadastrado ainda</p>
@@ -2384,6 +2391,12 @@
                 calculationHistory = await lupinDB.loadFromStorage('history') || [];
                 allStats = await lupinDB.loadFromStorage('allStats') || [];
                 
+                // Verificar se allStats está vazio ou corrompido
+                if (!Array.isArray(allStats) || allStats.length === 0) {
+                    console.log('Criando estatísticas limpas...');
+                    allStats = [];
+                }
+                
                 // Encontrar ou criar estatísticas do dia atual
                 const today = new Date().toDateString();
                 let todayStats = allStats.find(stat => stat.date === today);
@@ -2404,20 +2417,10 @@
                     await lupinDB.saveToStorage('allStats', allStats);
                 }
                 
-                dailyStats = todayStats;
-            } catch (error) {
-                console.log('Carregando dados do localStorage como fallback');
-                // Fallback para localStorage antigo
-                calculationHistory = JSON.parse(localStorage.getItem('loanHistory')) || [];
-                customers = JSON.parse(localStorage.getItem('customers')) || [];
-                const oldStats = JSON.parse(localStorage.getItem('dailyStats'));
-                
-                if (oldStats) {
-                    allStats = [oldStats];
-                    dailyStats = oldStats;
-                } else {
-                    const today = new Date().toDateString();
-                    dailyStats = {
+                // Verificar se as estatísticas do dia atual estão corrompidas
+                if (typeof todayStats.totalLoaned !== 'number') {
+                    console.log('Estatísticas corrompidas detectadas, resetando...');
+                    todayStats = {
                         totalLoaned: 0,
                         totalProfit: 0,
                         totalCalculations: 0,
@@ -2428,9 +2431,42 @@
                         totalOverdue: 0,
                         overdueCount: 0
                     };
-                    allStats = [dailyStats];
+                    
+                    // Substituir no array
+                    const index = allStats.findIndex(stat => stat.date === today);
+                    if (index !== -1) {
+                        allStats[index] = todayStats;
+                    } else {
+                        allStats.push(todayStats);
+                    }
+                    await lupinDB.saveToStorage('allStats', allStats);
                 }
+                
+                dailyStats = todayStats;
+            } catch (error) {
+                console.log('Erro ao carregar dados, criando dados limpos...');
+                // Criar dados completamente limpos
+                const today = new Date().toDateString();
+                dailyStats = {
+                    totalLoaned: 0,
+                    totalProfit: 0,
+                    totalCalculations: 0,
+                    rates: [],
+                    date: today,
+                    totalReceivable: 0,
+                    totalReceived: 0,
+                    totalOverdue: 0,
+                    overdueCount: 0
+                };
+                
+                allStats = [dailyStats];
+                customers = customers || [];
+                calculationHistory = calculationHistory || [];
+                
+                // Salvar dados limpos
                 await lupinDB.saveToStorage('allStats', allStats);
+                await lupinDB.saveToStorage('customers', customers);
+                await lupinDB.saveToStorage('history', calculationHistory);
             }
         }
 
@@ -2972,60 +3008,145 @@
 
         function displayCustomers() {
             const container = document.getElementById('customersContainer');
+            const filter = document.getElementById('customerFilter').value;
             
             if (customers.length === 0) {
                 container.innerHTML = '<p style="text-align: center; color: #6c757d; font-style: italic;">Nenhum cliente cadastrado ainda</p>';
                 return;
             }
             
-            const activeCustomers = customers.filter(c => c.status === 'active');
+            let filteredCustomers;
+            switch(filter) {
+                case 'active':
+                    filteredCustomers = customers.filter(c => c.status === 'active');
+                    break;
+                case 'paid':
+                    filteredCustomers = customers.filter(c => c.status === 'paid');
+                    break;
+                case 'all':
+                default:
+                    filteredCustomers = customers;
+                    break;
+            }
             
-            if (activeCustomers.length === 0) {
-                container.innerHTML = '<p style="text-align: center; color: #6c757d; font-style: italic;">Todos os empréstimos foram quitados</p>';
+            if (filteredCustomers.length === 0) {
+                let message = '';
+                switch(filter) {
+                    case 'active':
+                        message = 'Nenhum empréstimo ativo no momento';
+                        break;
+                    case 'paid':
+                        message = 'Nenhum empréstimo foi quitado ainda';
+                        break;
+                    case 'all':
+                        message = 'Nenhum cliente cadastrado ainda';
+                        break;
+                }
+                container.innerHTML = `<p style="text-align: center; color: #6c757d; font-style: italic;">${message}</p>`;
                 return;
             }
             
-            // Atualizar informações de atraso antes de exibir
-            updateOverdueLoans();
+            // Atualizar informações de atraso antes de exibir (apenas para ativos)
+            if (filter === 'active' || filter === 'all') {
+                updateOverdueLoans();
+            }
             
-            container.innerHTML = activeCustomers.map(customer => {
-                const dueDate = new Date(customer.dueDate);
-                const today = new Date();
-                const isOverdue = dueDate < today;
-                const dueDateClass = isOverdue ? 'overdue' : '';
-                
-                // Calcular informações de atraso
-                const overdueInfo = customer.overdueInfo;
-                let currentAmount = customer.totalAmount;
-                let overdueDisplay = '';
-                
-                if (overdueInfo && overdueInfo.daysOverdue > 0) {
-                    currentAmount = overdueInfo.newTotalAmount;
-                    overdueDisplay = `
-                        <div style="background: #f8d7da; color: #721c24; padding: 10px; border-radius: 6px; margin: 10px 0; border-left: 4px solid #dc3545;">
-                            <div style="font-weight: 600; margin-bottom: 5px;">🚨 EMPRÉSTIMO EM ATRASO</div>
-                            <div style="font-size: 0.8rem;">
-                                • ${overdueInfo.daysOverdue} dia${overdueInfo.daysOverdue > 1 ? 's' : ''} de atraso<br>
-                                • Juros de atraso: ${formatCurrency(overdueInfo.overdueInterest)} (1% ao dia)<br>
-                                • <strong>Novo valor total: ${formatCurrency(overdueInfo.newTotalAmount)}</strong>
-                            </div>
-                        </div>
-                    `;
-                }
-                
+            container.innerHTML = filteredCustomers.map(customer => {
                 // Verificar se tem foto
                 const photoHtml = customer.photo 
                     ? `<img src="${customer.photo}" alt="Foto de ${customer.name}" class="customer-photo" onclick="openPhotoModal('${customer.photo}')">`
                     : `<div class="customer-photo" style="background: #e9ecef; display: flex; align-items: center; justify-content: center; color: #6c757d; font-size: 1.5rem;">👤</div>`;
                 
+                // Definir cores e estilos baseados no status
+                let cardStyle = '';
+                let statusDisplay = '';
+                let currentAmount = customer.totalAmount;
+                let overdueDisplay = '';
+                let actionButtons = '';
+                
+                if (customer.status === 'paid') {
+                    // Cliente que já pagou
+                    cardStyle = 'border-left-color: #27ae60; background: linear-gradient(135deg, #f8fff8, #e8f5e8);';
+                    statusDisplay = `
+                        <div style="background: #d4edda; color: #155724; padding: 10px; border-radius: 6px; margin: 10px 0; border-left: 4px solid #28a745;">
+                            <div style="font-weight: 600; margin-bottom: 5px;">✅ EMPRÉSTIMO QUITADO</div>
+                            <div style="font-size: 0.8rem;">
+                                • Pago em: ${customer.paidDate}<br>
+                                • Valor final recebido: ${formatCurrency(customer.finalAmount || customer.totalAmount)}<br>
+                                • Lucro obtido: ${formatCurrency((customer.finalAmount || customer.totalAmount) - customer.principal)}
+                            </div>
+                        </div>
+                    `;
+                    
+                    actionButtons = `
+                        <div class="customer-actions">
+                            <button class="action-btn contact-btn" onclick="contactCustomer('${customer.phone}', '${customer.name}', ${customer.finalAmount || customer.totalAmount}, 0)">
+                                📱 Contatar
+                            </button>
+                            <button class="action-btn delete-btn" onclick="deleteCustomer(${customer.id})">
+                                🗑️ Excluir
+                            </button>
+                        </div>
+                    `;
+                } else {
+                    // Cliente ativo
+                    const dueDate = new Date(customer.dueDate);
+                    const today = new Date();
+                    const isOverdue = dueDate < today;
+                    const dueDateClass = isOverdue ? 'overdue' : '';
+                    
+                    // Calcular informações de atraso
+                    const overdueInfo = customer.overdueInfo;
+                    currentAmount = customer.totalAmount;
+                    
+                    if (overdueInfo && overdueInfo.daysOverdue > 0) {
+                        currentAmount = overdueInfo.newTotalAmount;
+                        cardStyle = 'border-left-color: #dc3545; box-shadow: 0 2px 8px rgba(220, 53, 69, 0.2);';
+                        overdueDisplay = `
+                            <div style="background: #f8d7da; color: #721c24; padding: 10px; border-radius: 6px; margin: 10px 0; border-left: 4px solid #dc3545;">
+                                <div style="font-weight: 600; margin-bottom: 5px;">🚨 EMPRÉSTIMO EM ATRASO</div>
+                                <div style="font-size: 0.8rem;">
+                                    • ${overdueInfo.daysOverdue} dia${overdueInfo.daysOverdue > 1 ? 's' : ''} de atraso<br>
+                                    • Juros de atraso: ${formatCurrency(overdueInfo.overdueInterest)} (1% ao dia)<br>
+                                    • <strong>Novo valor total: ${formatCurrency(overdueInfo.newTotalAmount)}</strong>
+                                </div>
+                            </div>
+                        `;
+                    }
+                    
+                    statusDisplay = `
+                        <div class="due-date ${dueDateClass}">
+                            ${isOverdue ? '⚠️ Vencido em' : '📅 Vence em'} ${dueDate.toLocaleDateString('pt-BR')}
+                        </div>
+                        ${overdueDisplay}
+                    `;
+                    
+                    actionButtons = `
+                        <div class="customer-actions">
+                            <button class="action-btn paid-btn" onclick="showPaymentOptions(${customer.id}, ${currentAmount}, '${customer.name}')">
+                                💰 Receber Pagamento
+                            </button>
+                            <button class="action-btn contact-btn" onclick="contactCustomer('${customer.phone}', '${customer.name}', ${currentAmount}, ${overdueInfo ? overdueInfo.daysOverdue : 0})">
+                                📱 Contatar
+                            </button>
+                            <button class="action-btn delete-btn" onclick="deleteCustomer(${customer.id})">
+                                🗑️ Excluir
+                            </button>
+                        </div>
+                    `;
+                }
+                
                 return `
-                    <div class="customer-card" style="${isOverdue ? 'border-left-color: #dc3545; box-shadow: 0 2px 8px rgba(220, 53, 69, 0.2);' : ''}">
+                    <div class="customer-card" style="${cardStyle}">
                         <div class="customer-header-with-photo">
                             ${photoHtml}
                             <div class="customer-info-section">
                                 <div class="customer-header">
-                                    <div class="customer-name">${customer.name} ${isOverdue ? '⚠️' : ''}</div>
-                                    <div class="customer-debt" style="${isOverdue ? 'color: #dc3545; font-weight: 700;' : ''}">${formatCurrency(currentAmount)}</div>
+                                    <div class="customer-name">
+                                        ${customer.name} 
+                                        ${customer.status === 'paid' ? '✅' : (customer.overdueInfo && customer.overdueInfo.daysOverdue > 0 ? '⚠️' : '')}
+                                    </div>
+                                    <div class="customer-debt" style="${customer.status === 'paid' ? 'color: #27ae60;' : (customer.overdueInfo && customer.overdueInfo.daysOverdue > 0 ? 'color: #dc3545; font-weight: 700;' : '')}">${formatCurrency(currentAmount)}</div>
                                 </div>
                                 
                                 <div class="customer-info">
@@ -3038,13 +3159,10 @@
                                 <div class="customer-info">
                                     💰 Emprestado: ${formatCurrency(customer.principal)} • 
                                     📈 Juros: ${formatCurrency(customer.interestEarned)} (${customer.rate}%)
+                                    ${customer.status === 'paid' ? `• 🎯 Lucro: ${formatCurrency((customer.finalAmount || customer.totalAmount) - customer.principal)}` : ''}
                                 </div>
                                 
-                                <div class="due-date ${dueDateClass}">
-                                    ${isOverdue ? '⚠️ Vencido em' : '📅 Vence em'} ${dueDate.toLocaleDateString('pt-BR')}
-                                </div>
-                                
-                                ${overdueDisplay}
+                                ${statusDisplay}
                             </div>
                         </div>
                         
@@ -3087,17 +3205,7 @@
                             </div>
                         ` : ''}
                         
-                        <div class="customer-actions">
-                            <button class="action-btn paid-btn" onclick="showPaymentOptions(${customer.id}, ${currentAmount}, '${customer.name}')">
-                                💰 Receber Pagamento
-                            </button>
-                            <button class="action-btn contact-btn" onclick="contactCustomer('${customer.phone}', '${customer.name}', ${currentAmount}, ${overdueInfo ? overdueInfo.daysOverdue : 0})">
-                                📱 Contatar
-                            </button>
-                            <button class="action-btn delete-btn" onclick="deleteCustomer(${customer.id})">
-                                🗑️ Excluir
-                            </button>
-                        </div>
+                        ${actionButtons}
                     </div>
                 `;
             }).join('');
@@ -3511,14 +3619,43 @@
                         totalProfit: 0,
                         totalCalculations: 0,
                         rates: [],
-                        date: today
+                        date: today,
+                        totalReceivable: 0,
+                        totalReceived: 0,
+                        totalOverdue: 0,
+                        overdueCount: 0
                     };
                     
                     allStats = [dailyStats];
-                    await lupinDB.saveToStorage('allStats', allStats);
                     
-                    // Limpar filtros
+                    // Limpar TODOS os storages possíveis
+                    await lupinDB.saveToStorage('allStats', allStats);
+                    await lupinDB.saveToStorage('stats', dailyStats);
+                    
+                    // Limpar localStorage antigo também
+                    localStorage.removeItem('dailyStats');
+                    localStorage.removeItem('lupinDB_stats');
+                    localStorage.removeItem('lupinDB_allStats');
+                    
+                    // Limpar histórico e clientes também se solicitado
+                    const clearAll = confirm('Deseja também limpar o histórico de cálculos e clientes? (Recomendado para reset completo)');
+                    if (clearAll) {
+                        calculationHistory = [];
+                        customers = [];
+                        await lupinDB.saveToStorage('history', []);
+                        await lupinDB.saveToStorage('customers', []);
+                        localStorage.removeItem('loanHistory');
+                        localStorage.removeItem('customers');
+                        localStorage.removeItem('lupinDB_history');
+                        localStorage.removeItem('lupinDB_customers');
+                        
+                        displayHistory();
+                        displayCustomers();
+                    }
+                    
+                    // Limpar filtros e atualizar display
                     clearDateFilter();
+                    displayDailyStats();
                     
                     // Mostrar confirmação
                     const btn = event.target;
@@ -3687,6 +3824,11 @@
         document.getElementById('endDateFilter').value = today.toISOString().split('T')[0];
         document.getElementById('startDateFilter').value = thirtyDaysAgo.toISOString().split('T')[0];
 
+        // Função para filtrar clientes
+        function filterCustomers() {
+            displayCustomers();
+        }
+
         // Load data on page load
         window.addEventListener('load', async () => {
             await loadAllData();
@@ -3708,5 +3850,5 @@
             }, 2000);
         });
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'991953d0011a009f',t:'MTc2MDk3MTgyNS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'99195efac52c009f',t:'MTc2MDk3MjI4Mi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
