@@ -726,6 +726,31 @@
         .stats-grid {
             grid-template-columns: repeat(2, 1fr);
         }
+
+        /* Animação para notificação de atraso */
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.05);
+            }
+        }
+
+        .overdue-notification {
+            animation: pulse 2s infinite;
+        }
     </style>
 </head>
 <body>
@@ -993,7 +1018,7 @@
                         📅 Mostrando dados de <span id="dateRangeText"></span>
                     </div>
                 </div>
-                <div class="stats-grid">
+                <div class="stats-grid" style="grid-template-columns: repeat(2, 1fr); gap: 8px;">
                     <div class="stat-card">
                         <div class="stat-icon">💰</div>
                         <div class="stat-content">
@@ -1005,7 +1030,35 @@
                         <div class="stat-icon">📈</div>
                         <div class="stat-content">
                             <div class="stat-value" id="totalProfit">R$ 0,00</div>
-                            <div class="stat-label">Lucro Total</div>
+                            <div class="stat-label">Lucro Realizado</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">💸</div>
+                        <div class="stat-content">
+                            <div class="stat-value" id="totalReceivable">R$ 0,00</div>
+                            <div class="stat-label">A Receber</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">✅</div>
+                        <div class="stat-content">
+                            <div class="stat-value" id="totalReceived">R$ 0,00</div>
+                            <div class="stat-label">Já Recebido</div>
+                        </div>
+                    </div>
+                    <div class="stat-card" style="border-left-color: #e74c3c;">
+                        <div class="stat-icon" style="background: linear-gradient(135deg, #e74c3c, #c0392b);">⚠️</div>
+                        <div class="stat-content">
+                            <div class="stat-value" id="totalOverdue" style="color: #e74c3c;">R$ 0,00</div>
+                            <div class="stat-label">Juros de Atraso</div>
+                        </div>
+                    </div>
+                    <div class="stat-card" style="border-left-color: #e74c3c;">
+                        <div class="stat-icon" style="background: linear-gradient(135deg, #e74c3c, #c0392b);">🚨</div>
+                        <div class="stat-content">
+                            <div class="stat-value" id="overdueCount" style="color: #e74c3c;">0</div>
+                            <div class="stat-label">Em Atraso</div>
                         </div>
                     </div>
                     <div class="stat-card">
@@ -1267,7 +1320,12 @@
             totalProfit: 0,
             totalCalculations: 0,
             rates: [],
-            date: new Date().toDateString()
+            date: new Date().toDateString(),
+            // Novas estatísticas separadas
+            totalReceivable: 0, // Total a receber (empréstimos ativos)
+            totalReceived: 0,   // Total já recebido (empréstimos pagos)
+            totalOverdue: 0,    // Total em atraso
+            overdueCount: 0     // Quantidade de empréstimos em atraso
         };
         let currentCalculation = null;
         let currentStatsFilter = null; // Para controlar o filtro atual
@@ -1404,7 +1462,11 @@
                         totalProfit: 0,
                         totalCalculations: 0,
                         rates: [],
-                        date: today
+                        date: today,
+                        totalReceivable: 0,
+                        totalReceived: 0,
+                        totalOverdue: 0,
+                        overdueCount: 0
                     };
                     allStats.push(todayStats);
                     await lupinDB.saveToStorage('allStats', allStats);
@@ -1428,7 +1490,11 @@
                         totalProfit: 0,
                         totalCalculations: 0,
                         rates: [],
-                        date: today
+                        date: today,
+                        totalReceivable: 0,
+                        totalReceived: 0,
+                        totalOverdue: 0,
+                        overdueCount: 0
                     };
                     allStats = [dailyStats];
                 }
@@ -1496,6 +1562,113 @@
             event.target.value = '';
         }
 
+        // Função para calcular juros de atraso
+        function calculateOverdueInterest(customer) {
+            const dueDate = new Date(customer.dueDate);
+            const today = new Date();
+            
+            if (today <= dueDate) return 0; // Não está em atraso
+            
+            const daysOverdue = Math.floor((today - dueDate) / (1000 * 60 * 60 * 24));
+            
+            // Taxa de juros de atraso: 1% ao dia sobre o valor total
+            const overdueRate = 0.01; // 1% ao dia
+            const overdueInterest = customer.totalAmount * overdueRate * daysOverdue;
+            
+            return {
+                daysOverdue,
+                overdueInterest,
+                newTotalAmount: customer.totalAmount + overdueInterest
+            };
+        }
+
+        // Função para atualizar todos os empréstimos em atraso
+        function updateOverdueLoans() {
+            let hasOverdue = false;
+            
+            customers.forEach(customer => {
+                if (customer.status === 'active') {
+                    const overdueInfo = calculateOverdueInterest(customer);
+                    
+                    if (overdueInfo.daysOverdue > 0) {
+                        customer.overdueInfo = overdueInfo;
+                        hasOverdue = true;
+                    } else {
+                        delete customer.overdueInfo;
+                    }
+                }
+            });
+            
+            // Mostrar notificação se houver empréstimos em atraso
+            if (hasOverdue) {
+                showOverdueNotification();
+            }
+            
+            return hasOverdue;
+        }
+
+        // Função para mostrar notificação de atraso
+        function showOverdueNotification() {
+            const overdueCustomers = customers.filter(c => 
+                c.status === 'active' && c.overdueInfo && c.overdueInfo.daysOverdue > 0
+            );
+            
+            if (overdueCustomers.length === 0) return;
+            
+            // Criar ou atualizar elemento de notificação
+            let notification = document.getElementById('overdueNotification');
+            if (!notification) {
+                notification = document.createElement('div');
+                notification.id = 'overdueNotification';
+                notification.style.cssText = `
+                    position: fixed;
+                    top: 20px;
+                    right: 20px;
+                    background: linear-gradient(135deg, #e74c3c, #c0392b);
+                    color: white;
+                    padding: 15px 20px;
+                    border-radius: 10px;
+                    box-shadow: 0 5px 15px rgba(231, 76, 60, 0.3);
+                    z-index: 1000;
+                    max-width: 300px;
+                    cursor: pointer;
+                    animation: slideIn 0.5s ease;
+                `;
+                document.body.appendChild(notification);
+            }
+            
+            const totalOverdue = overdueCustomers.reduce((sum, c) => sum + c.overdueInfo.overdueInterest, 0);
+            
+            notification.innerHTML = `
+                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                    <span style="font-size: 1.5rem;">⚠️</span>
+                    <strong>EMPRÉSTIMOS EM ATRASO</strong>
+                </div>
+                <div style="font-size: 0.9rem;">
+                    ${overdueCustomers.length} cliente${overdueCustomers.length > 1 ? 's' : ''} em atraso
+                </div>
+                <div style="font-size: 0.8rem; margin-top: 5px; opacity: 0.9;">
+                    Juros de atraso: ${formatCurrency(totalOverdue)}
+                </div>
+                <div style="font-size: 0.7rem; margin-top: 8px; opacity: 0.8;">
+                    Clique para ver detalhes
+                </div>
+            `;
+            
+            notification.onclick = () => {
+                // Scroll para a seção de clientes
+                document.querySelector('.customers-list').scrollIntoView({ behavior: 'smooth' });
+                notification.style.display = 'none';
+            };
+            
+            // Auto-hide após 10 segundos
+            setTimeout(() => {
+                if (notification) {
+                    notification.style.display = 'none';
+                }
+            }, 10000);
+        }
+
         // Reset daily stats if it's a new day
         if (dailyStats.date !== new Date().toDateString()) {
             dailyStats = {
@@ -1503,7 +1676,11 @@
                 totalProfit: 0,
                 totalCalculations: 0,
                 rates: [],
-                date: new Date().toDateString()
+                date: new Date().toDateString(),
+                totalReceivable: 0,
+                totalReceived: 0,
+                totalOverdue: 0,
+                overdueCount: 0
             };
             localStorage.setItem('dailyStats', JSON.stringify(dailyStats));
         }
@@ -1679,6 +1856,17 @@
             
             customers.unshift(customer);
             await lupinDB.saveToStorage('customers', customers);
+            
+            // Atualizar estatísticas - adicionar aos recebíveis
+            dailyStats.totalReceivable += customer.totalAmount;
+            
+            // Atualizar estatísticas no array principal
+            const index = allStats.findIndex(stat => stat.date === dailyStats.date);
+            if (index !== -1) {
+                allStats[index] = dailyStats;
+            }
+            await lupinDB.saveToStorage('allStats', allStats);
+            
             displayCustomers();
             updateDailyStats(currentCalculation);
         }
@@ -1698,11 +1886,33 @@
                 return;
             }
             
+            // Atualizar informações de atraso antes de exibir
+            updateOverdueLoans();
+            
             container.innerHTML = activeCustomers.map(customer => {
                 const dueDate = new Date(customer.dueDate);
                 const today = new Date();
                 const isOverdue = dueDate < today;
                 const dueDateClass = isOverdue ? 'overdue' : '';
+                
+                // Calcular informações de atraso
+                const overdueInfo = customer.overdueInfo;
+                let currentAmount = customer.totalAmount;
+                let overdueDisplay = '';
+                
+                if (overdueInfo && overdueInfo.daysOverdue > 0) {
+                    currentAmount = overdueInfo.newTotalAmount;
+                    overdueDisplay = `
+                        <div style="background: #f8d7da; color: #721c24; padding: 10px; border-radius: 6px; margin: 10px 0; border-left: 4px solid #dc3545;">
+                            <div style="font-weight: 600; margin-bottom: 5px;">🚨 EMPRÉSTIMO EM ATRASO</div>
+                            <div style="font-size: 0.8rem;">
+                                • ${overdueInfo.daysOverdue} dia${overdueInfo.daysOverdue > 1 ? 's' : ''} de atraso<br>
+                                • Juros de atraso: ${formatCurrency(overdueInfo.overdueInterest)} (1% ao dia)<br>
+                                • <strong>Novo valor total: ${formatCurrency(overdueInfo.newTotalAmount)}</strong>
+                            </div>
+                        </div>
+                    `;
+                }
                 
                 // Verificar se tem foto
                 const photoHtml = customer.photo 
@@ -1710,13 +1920,13 @@
                     : `<div class="customer-photo" style="background: #e9ecef; display: flex; align-items: center; justify-content: center; color: #6c757d; font-size: 1.5rem;">👤</div>`;
                 
                 return `
-                    <div class="customer-card">
+                    <div class="customer-card" style="${isOverdue ? 'border-left-color: #dc3545; box-shadow: 0 2px 8px rgba(220, 53, 69, 0.2);' : ''}">
                         <div class="customer-header-with-photo">
                             ${photoHtml}
                             <div class="customer-info-section">
                                 <div class="customer-header">
-                                    <div class="customer-name">${customer.name}</div>
-                                    <div class="customer-debt">${formatCurrency(customer.totalAmount)}</div>
+                                    <div class="customer-name">${customer.name} ${isOverdue ? '⚠️' : ''}</div>
+                                    <div class="customer-debt" style="${isOverdue ? 'color: #dc3545; font-weight: 700;' : ''}">${formatCurrency(currentAmount)}</div>
                                 </div>
                                 
                                 <div class="customer-info">
@@ -1734,14 +1944,16 @@
                                 <div class="due-date ${dueDateClass}">
                                     ${isOverdue ? '⚠️ Vencido em' : '📅 Vence em'} ${dueDate.toLocaleDateString('pt-BR')}
                                 </div>
+                                
+                                ${overdueDisplay}
                             </div>
                         </div>
                         
                         <div class="customer-actions">
-                            <button class="action-btn paid-btn" onclick="markAsPaid(${customer.id})">
+                            <button class="action-btn paid-btn" onclick="markAsPaid(${customer.id}, ${currentAmount})">
                                 ✅ Pago
                             </button>
-                            <button class="action-btn contact-btn" onclick="contactCustomer('${customer.phone}', '${customer.name}', ${customer.totalAmount})">
+                            <button class="action-btn contact-btn" onclick="contactCustomer('${customer.phone}', '${customer.name}', ${currentAmount}, ${overdueInfo ? overdueInfo.daysOverdue : 0})">
                                 📱 Contatar
                             </button>
                             <button class="action-btn delete-btn" onclick="deleteCustomer(${customer.id})">
@@ -1753,13 +1965,41 @@
             }).join('');
         }
 
-        async function markAsPaid(customerId) {
+        async function markAsPaid(customerId, paidAmount = null) {
             const customer = customers.find(c => c.id === customerId);
             if (customer) {
+                const finalAmount = paidAmount || customer.totalAmount;
+                const originalProfit = customer.interestEarned;
+                const overdueProfit = customer.overdueInfo ? customer.overdueInfo.overdueInterest : 0;
+                const totalProfit = originalProfit + overdueProfit;
+                
                 customer.status = 'paid';
                 customer.paidDate = new Date().toLocaleDateString('pt-BR');
+                customer.finalAmount = finalAmount;
+                customer.totalProfitEarned = totalProfit;
+                
+                // Atualizar estatísticas - mover de "a receber" para "recebido"
+                dailyStats.totalReceivable -= customer.totalAmount;
+                dailyStats.totalReceived += finalAmount;
+                
+                // Atualizar estatísticas de atraso se aplicável
+                if (customer.overdueInfo) {
+                    dailyStats.totalOverdue -= customer.overdueInfo.overdueInterest;
+                    dailyStats.overdueCount -= 1;
+                }
+                
+                // Salvar dados
                 await lupinDB.saveToStorage('customers', customers);
+                
+                // Atualizar estatísticas no array principal
+                const index = allStats.findIndex(stat => stat.date === dailyStats.date);
+                if (index !== -1) {
+                    allStats[index] = dailyStats;
+                }
+                await lupinDB.saveToStorage('allStats', allStats);
+                
                 displayCustomers();
+                displayDailyStats();
                 
                 // Show success message
                 const customerCard = event.target.closest('.customer-card');
@@ -1767,20 +2007,29 @@
                 customerCard.innerHTML = `
                     <div style="text-align: center; padding: 20px; color: #155724;">
                         <h3>✅ Empréstimo Quitado!</h3>
-                        <p><strong>${customer.name}</strong> pagou ${formatCurrency(customer.totalAmount)}</p>
-                        <p>Lucro obtido: ${formatCurrency(customer.interestEarned)}</p>
+                        <p><strong>${customer.name}</strong> pagou ${formatCurrency(finalAmount)}</p>
+                        <p>Lucro original: ${formatCurrency(originalProfit)}</p>
+                        ${overdueProfit > 0 ? `<p>Juros de atraso: ${formatCurrency(overdueProfit)}</p>` : ''}
+                        <p><strong>Lucro total: ${formatCurrency(totalProfit)}</strong></p>
                     </div>
                 `;
                 
                 setTimeout(() => {
                     displayCustomers();
-                }, 3000);
+                }, 4000);
             }
         }
 
-        function contactCustomer(phone, name, amount) {
+        function contactCustomer(phone, name, amount, daysOverdue = 0) {
             const cleanPhone = phone.replace(/\D/g, '');
-            const message = `Olá ${name}! Lembrete sobre seu empréstimo no valor de ${formatCurrency(amount)}. Entre em contato para acertarmos. Obrigado!`;
+            let message;
+            
+            if (daysOverdue > 0) {
+                message = `🚨 URGENTE - ${name}! Seu empréstimo está em atraso há ${daysOverdue} dia${daysOverdue > 1 ? 's' : ''}. Valor atual: ${formatCurrency(amount)} (incluindo juros de atraso de 1% ao dia). Entre em contato IMEDIATAMENTE para regularizar. Obrigado!`;
+            } else {
+                message = `Olá ${name}! Lembrete sobre seu empréstimo no valor de ${formatCurrency(amount)}. Entre em contato para acertarmos. Obrigado!`;
+            }
+            
             const whatsappUrl = `https://wa.me/55${cleanPhone}?text=${encodeURIComponent(message)}`;
             window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
         }
@@ -1816,14 +2065,46 @@
         function displayDailyStats(statsToShow = null) {
             const stats = statsToShow || dailyStats;
             
+            // Calcular estatísticas em tempo real dos empréstimos ativos
+            const activeCustomers = customers.filter(c => c.status === 'active');
+            const paidCustomers = customers.filter(c => c.status === 'paid');
+            
+            let currentReceivable = 0;
+            let currentOverdue = 0;
+            let overdueCount = 0;
+            
+            activeCustomers.forEach(customer => {
+                const overdueInfo = calculateOverdueInterest(customer);
+                if (overdueInfo && overdueInfo.daysOverdue > 0) {
+                    currentReceivable += overdueInfo.newTotalAmount;
+                    currentOverdue += overdueInfo.overdueInterest;
+                    overdueCount++;
+                } else {
+                    currentReceivable += customer.totalAmount;
+                }
+            });
+            
+            const currentReceived = paidCustomers.reduce((sum, c) => sum + (c.finalAmount || c.totalAmount), 0);
+            
             document.getElementById('totalLoaned').textContent = formatCurrency(stats.totalLoaned);
-            document.getElementById('totalProfit').textContent = formatCurrency(stats.totalProfit);
+            document.getElementById('totalProfit').textContent = formatCurrency(currentReceived - stats.totalLoaned);
             document.getElementById('totalCalculations').textContent = stats.totalCalculations;
             
             const avgRate = stats.rates && stats.rates.length > 0 
                 ? stats.rates.reduce((a, b) => a + b, 0) / stats.rates.length 
                 : 0;
             document.getElementById('avgRate').textContent = avgRate.toFixed(1) + '%';
+            
+            // Atualizar os novos campos se existirem
+            const receivableElement = document.getElementById('totalReceivable');
+            const receivedElement = document.getElementById('totalReceived');
+            const overdueElement = document.getElementById('totalOverdue');
+            const overdueCountElement = document.getElementById('overdueCount');
+            
+            if (receivableElement) receivableElement.textContent = formatCurrency(currentReceivable);
+            if (receivedElement) receivedElement.textContent = formatCurrency(currentReceived);
+            if (overdueElement) overdueElement.textContent = formatCurrency(currentOverdue);
+            if (overdueCountElement) overdueCountElement.textContent = overdueCount;
         }
 
         function filterStatistics() {
@@ -2086,7 +2367,20 @@
             displayHistory();
             displayDailyStats();
             displayCustomers();
+            
+            // Verificar empréstimos em atraso a cada 30 segundos
+            setInterval(() => {
+                if (customers.length > 0) {
+                    updateOverdueLoans();
+                    displayDailyStats();
+                }
+            }, 30000);
+            
+            // Verificação inicial de atraso
+            setTimeout(() => {
+                updateOverdueLoans();
+            }, 2000);
         });
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9918dfcb56de009f',t:'MTc2MDk2NzA3Mi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9918eabb6002009f',t:'MTc2MDk2NzUyMC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
