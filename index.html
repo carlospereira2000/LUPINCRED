@@ -544,6 +544,177 @@
             grid-column: 1 / -1;
         }
 
+        /* Estilos para o sistema de fotos */
+        .photo-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            padding: 15px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+            border: 2px dashed rgba(255,255,255,0.3);
+        }
+
+        .photo-preview {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            overflow: hidden;
+            border: 3px solid rgba(255,255,255,0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255,255,255,0.1);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .photo-preview:hover {
+            border-color: rgba(255,255,255,0.6);
+            transform: scale(1.05);
+        }
+
+        .photo-placeholder {
+            text-align: center;
+            color: rgba(255,255,255,0.8);
+        }
+
+        .photo-placeholder span {
+            font-size: 2rem;
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .photo-placeholder p {
+            margin: 0;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .photo-preview img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .photo-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .photo-btn {
+            padding: 10px 15px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-radius: 8px;
+            background: rgba(255,255,255,0.1);
+            color: white;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .photo-btn:hover {
+            background: rgba(255,255,255,0.2);
+            border-color: rgba(255,255,255,0.5);
+            transform: translateY(-2px);
+        }
+
+        .camera-btn:hover {
+            background: rgba(52, 152, 219, 0.3);
+            border-color: #3498db;
+        }
+
+        .gallery-btn:hover {
+            background: rgba(155, 89, 182, 0.3);
+            border-color: #9b59b6;
+        }
+
+        .remove-btn:hover {
+            background: rgba(231, 76, 60, 0.3);
+            border-color: #e74c3c;
+        }
+
+        .customer-photo {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid #e74c3c;
+            margin-right: 15px;
+            flex-shrink: 0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .customer-photo:hover {
+            transform: scale(1.1);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+
+        .customer-header-with-photo {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .customer-info-section {
+            flex: 1;
+        }
+
+        .photo-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.9);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .photo-modal.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .photo-modal img {
+            max-width: 90%;
+            max-height: 90%;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        .photo-modal-close {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: none;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            font-size: 1.5rem;
+            cursor: pointer;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        }
+
+        .photo-modal-close:hover {
+            background: rgba(255,255,255,0.3);
+            transform: scale(1.1);
+        }
+
         .header h1 {
             font-size: 2rem;
         }
@@ -668,6 +839,31 @@
                 </h2>
                 
                 <form id="customerForm">
+                    <div class="form-group">
+                        <label>📸 Foto do Cliente</label>
+                        <div class="photo-section">
+                            <div class="photo-preview" id="photoPreview" onclick="selectPhoto()">
+                                <div class="photo-placeholder">
+                                    <span>📷</span>
+                                    <p>Adicionar Foto</p>
+                                </div>
+                            </div>
+                            <div class="photo-buttons">
+                                <button type="button" class="photo-btn camera-btn" onclick="takePhoto()">
+                                    📷 Câmera
+                                </button>
+                                <button type="button" class="photo-btn gallery-btn" onclick="selectFromGallery()">
+                                    🖼️ Galeria
+                                </button>
+                                <button type="button" class="photo-btn remove-btn" onclick="removePhoto()" style="display: none;" id="removePhotoBtn">
+                                    🗑️ Remover
+                                </button>
+                            </div>
+                            <input type="file" id="photoInput" accept="image/*" capture="environment" style="display: none;" onchange="handlePhotoSelect(event)">
+                            <input type="file" id="galleryInput" accept="image/*" style="display: none;" onchange="handlePhotoSelect(event)">
+                        </div>
+                    </div>
+                    
                     <div class="form-row">
                         <div class="form-group">
                             <label for="customerName">Nome Completo *</label>
@@ -830,6 +1026,12 @@
             </section>
         </div>
     </main>
+
+    <!-- Modal para visualizar foto em tela cheia -->
+    <div class="photo-modal" id="photoModal" onclick="closePhotoModal()">
+        <button class="photo-modal-close" onclick="closePhotoModal()">✕</button>
+        <img id="photoModalImage" src="" alt="Foto do Cliente">
+    </div>
 
     <script>
         // Sistema de Banco de Dados Local Avançado
@@ -1069,6 +1271,121 @@
         };
         let currentCalculation = null;
         let currentStatsFilter = null; // Para controlar o filtro atual
+        let currentPhotoData = null; // Para armazenar foto atual
+
+        // Funções para gerenciar fotos
+        function takePhoto() {
+            document.getElementById('photoInput').click();
+        }
+
+        function selectFromGallery() {
+            document.getElementById('galleryInput').click();
+        }
+
+        function selectPhoto() {
+            // Permite clicar na área da foto para selecionar
+            selectFromGallery();
+        }
+
+        function handlePhotoSelect(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            // Verificar se é uma imagem
+            if (!file.type.startsWith('image/')) {
+                alert('Por favor, selecione apenas arquivos de imagem.');
+                return;
+            }
+
+            // Verificar tamanho do arquivo (máximo 5MB)
+            if (file.size > 5 * 1024 * 1024) {
+                alert('A imagem é muito grande. Por favor, selecione uma imagem menor que 5MB.');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                // Redimensionar a imagem para economizar espaço
+                resizeImage(e.target.result, 400, 400, (resizedImage) => {
+                    currentPhotoData = resizedImage;
+                    displayPhoto(resizedImage);
+                });
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function resizeImage(src, maxWidth, maxHeight, callback) {
+            const img = new Image();
+            img.onload = function() {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+
+                // Calcular novas dimensões mantendo proporção
+                let { width, height } = img;
+                
+                if (width > height) {
+                    if (width > maxWidth) {
+                        height = (height * maxWidth) / width;
+                        width = maxWidth;
+                    }
+                } else {
+                    if (height > maxHeight) {
+                        width = (width * maxHeight) / height;
+                        height = maxHeight;
+                    }
+                }
+
+                canvas.width = width;
+                canvas.height = height;
+
+                // Desenhar imagem redimensionada
+                ctx.drawImage(img, 0, 0, width, height);
+
+                // Converter para base64 com qualidade reduzida
+                const resizedImage = canvas.toDataURL('image/jpeg', 0.8);
+                callback(resizedImage);
+            };
+            img.src = src;
+        }
+
+        function displayPhoto(photoData) {
+            const preview = document.getElementById('photoPreview');
+            preview.innerHTML = `<img src="${photoData}" alt="Foto do Cliente">`;
+            
+            // Mostrar botão de remover
+            document.getElementById('removePhotoBtn').style.display = 'block';
+        }
+
+        function removePhoto() {
+            currentPhotoData = null;
+            const preview = document.getElementById('photoPreview');
+            preview.innerHTML = `
+                <div class="photo-placeholder">
+                    <span>📷</span>
+                    <p>Adicionar Foto</p>
+                </div>
+            `;
+            
+            // Esconder botão de remover
+            document.getElementById('removePhotoBtn').style.display = 'none';
+            
+            // Limpar inputs
+            document.getElementById('photoInput').value = '';
+            document.getElementById('galleryInput').value = '';
+        }
+
+        function openPhotoModal(photoSrc) {
+            const modal = document.getElementById('photoModal');
+            const modalImage = document.getElementById('photoModalImage');
+            
+            modalImage.src = photoSrc;
+            modal.classList.add('active');
+        }
+
+        function closePhotoModal() {
+            const modal = document.getElementById('photoModal');
+            modal.classList.remove('active');
+        }
 
         // Carregar dados na inicialização
         async function loadAllData() {
@@ -1346,6 +1663,9 @@
         function hideCustomerForm() {
             document.getElementById('customerSection').style.display = 'none';
             document.getElementById('loanActions').style.display = 'block';
+            
+            // Limpar foto ao cancelar
+            removePhoto();
         }
 
         async function addCustomer(customerData) {
@@ -1353,7 +1673,8 @@
                 id: Date.now(),
                 ...customerData,
                 loanDate: new Date().toLocaleDateString('pt-BR'),
-                status: 'active'
+                status: 'active',
+                photo: currentPhotoData // Adicionar foto aos dados do cliente
             };
             
             customers.unshift(customer);
@@ -1383,27 +1704,37 @@
                 const isOverdue = dueDate < today;
                 const dueDateClass = isOverdue ? 'overdue' : '';
                 
+                // Verificar se tem foto
+                const photoHtml = customer.photo 
+                    ? `<img src="${customer.photo}" alt="Foto de ${customer.name}" class="customer-photo" onclick="openPhotoModal('${customer.photo}')">`
+                    : `<div class="customer-photo" style="background: #e9ecef; display: flex; align-items: center; justify-content: center; color: #6c757d; font-size: 1.5rem;">👤</div>`;
+                
                 return `
                     <div class="customer-card">
-                        <div class="customer-header">
-                            <div class="customer-name">${customer.name}</div>
-                            <div class="customer-debt">${formatCurrency(customer.totalAmount)}</div>
-                        </div>
-                        
-                        <div class="customer-info">
-                            📱 ${formatPhone(customer.phone)}
-                            ${customer.cpf ? `• 📄 ${formatCPF(customer.cpf)}` : ''}
-                        </div>
-                        
-                        ${customer.address ? `<div class="customer-info">📍 ${customer.address}</div>` : ''}
-                        
-                        <div class="customer-info">
-                            💰 Emprestado: ${formatCurrency(customer.principal)} • 
-                            📈 Juros: ${formatCurrency(customer.interestEarned)} (${customer.rate}%)
-                        </div>
-                        
-                        <div class="due-date ${dueDateClass}">
-                            ${isOverdue ? '⚠️ Vencido em' : '📅 Vence em'} ${dueDate.toLocaleDateString('pt-BR')}
+                        <div class="customer-header-with-photo">
+                            ${photoHtml}
+                            <div class="customer-info-section">
+                                <div class="customer-header">
+                                    <div class="customer-name">${customer.name}</div>
+                                    <div class="customer-debt">${formatCurrency(customer.totalAmount)}</div>
+                                </div>
+                                
+                                <div class="customer-info">
+                                    📱 ${formatPhone(customer.phone)}
+                                    ${customer.cpf ? `• 📄 ${formatCPF(customer.cpf)}` : ''}
+                                </div>
+                                
+                                ${customer.address ? `<div class="customer-info">📍 ${customer.address}</div>` : ''}
+                                
+                                <div class="customer-info">
+                                    💰 Emprestado: ${formatCurrency(customer.principal)} • 
+                                    📈 Juros: ${formatCurrency(customer.interestEarned)} (${customer.rate}%)
+                                </div>
+                                
+                                <div class="due-date ${dueDateClass}">
+                                    ${isOverdue ? '⚠️ Vencido em' : '📅 Vence em'} ${dueDate.toLocaleDateString('pt-BR')}
+                                </div>
+                            </div>
                         </div>
                         
                         <div class="customer-actions">
@@ -1700,6 +2031,9 @@
             document.getElementById('customerSection').style.display = 'none';
             document.getElementById('loanActions').style.display = 'none';
             
+            // Limpar foto
+            removePhoto();
+            
             // Show success message
             const btn = document.querySelector('.loan-btn');
             const originalText = btn.innerHTML;
@@ -1754,5 +2088,5 @@
             displayCustomers();
         });
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'990a7dd2b2e9009f',t:'MTc2MDgxNjI1OS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9918dfcb56de009f',t:'MTc2MDk2NzA3Mi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
