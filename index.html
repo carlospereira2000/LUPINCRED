@@ -1646,6 +1646,23 @@
                         <button class="clear-history" onclick="clearCustomers()">Limpar Todos</button>
                     </div>
                 </div>
+                
+                <!-- Contador de clientes por categoria -->
+                <div id="customerStats" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px; font-size: 0.85rem;">
+                    <div style="background: #fff3cd; color: #856404; padding: 10px; border-radius: 6px; text-align: center; border-left: 3px solid #ffc107;">
+                        <div style="font-weight: 600; font-size: 1.1rem;" id="activeCount">0</div>
+                        <div>🟢 Empréstimos Ativos</div>
+                    </div>
+                    <div style="background: #d4edda; color: #155724; padding: 10px; border-radius: 6px; text-align: center; border-left: 3px solid #28a745;">
+                        <div style="font-weight: 600; font-size: 1.1rem;" id="paidCount">0</div>
+                        <div>✅ Empréstimos Pagos</div>
+                    </div>
+                    <div style="background: #e2e3e5; color: #383d41; padding: 10px; border-radius: 6px; text-align: center; border-left: 3px solid #6c757d;">
+                        <div style="font-weight: 600; font-size: 1.1rem;" id="totalCount">0</div>
+                        <div>📋 Total de Empréstimos</div>
+                    </div>
+                </div>
+                
                 <div id="customersContainer">
                     <p style="text-align: center; color: #6c757d; font-style: italic;">Nenhum cliente cadastrado ainda</p>
                 </div>
@@ -3010,6 +3027,9 @@
             const container = document.getElementById('customersContainer');
             const filter = document.getElementById('customerFilter').value;
             
+            // Atualizar contadores
+            updateCustomerStats();
+            
             if (customers.length === 0) {
                 container.innerHTML = '<p style="text-align: center; color: #6c757d; font-style: italic;">Nenhum cliente cadastrado ainda</p>';
                 return;
@@ -3824,6 +3844,16 @@
         document.getElementById('endDateFilter').value = today.toISOString().split('T')[0];
         document.getElementById('startDateFilter').value = thirtyDaysAgo.toISOString().split('T')[0];
 
+        // Função para atualizar contadores de clientes
+        function updateCustomerStats() {
+            const activeCustomers = customers.filter(c => c.status === 'active');
+            const paidCustomers = customers.filter(c => c.status === 'paid');
+            
+            document.getElementById('activeCount').textContent = activeCustomers.length;
+            document.getElementById('paidCount').textContent = paidCustomers.length;
+            document.getElementById('totalCount').textContent = customers.length;
+        }
+
         // Função para filtrar clientes
         function filterCustomers() {
             displayCustomers();
@@ -3850,5 +3880,5 @@
             }, 2000);
         });
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'99195efac52c009f',t:'MTc2MDk3MjI4Mi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'991961554176009f',t:'MTc2MDk3MjM3OC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
