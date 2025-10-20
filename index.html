@@ -1098,6 +1098,263 @@
             box-shadow: 0 8px 20px rgba(46, 204, 113, 0.3);
         }
 
+        /* Estilos para modal de pagamento */
+        .payment-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+            padding: 20px;
+        }
+
+        .payment-modal.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .payment-modal-content {
+            background: white;
+            border-radius: 15px;
+            max-width: 500px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+            transform: scale(0.9);
+            transition: transform 0.3s ease;
+        }
+
+        .payment-modal.active .payment-modal-content {
+            transform: scale(1);
+        }
+
+        .payment-modal-header {
+            background: linear-gradient(135deg, #27ae60, #2ecc71);
+            color: white;
+            padding: 20px;
+            border-radius: 15px 15px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .payment-modal-header h3 {
+            margin: 0;
+            font-size: 1.3rem;
+            font-weight: 600;
+        }
+
+        .payment-modal-close {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: none;
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .payment-modal-close:hover {
+            background: rgba(255,255,255,0.3);
+            transform: scale(1.1);
+        }
+
+        .payment-info {
+            padding: 20px;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .payment-summary {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+        }
+
+        .payment-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            font-size: 0.95rem;
+        }
+
+        .payment-row.total {
+            border-top: 2px solid #27ae60;
+            margin-top: 10px;
+            padding-top: 15px;
+            font-weight: 700;
+            font-size: 1.1rem;
+            color: #27ae60;
+        }
+
+        .payment-options {
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .payment-option-btn {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            padding: 15px 20px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            text-align: left;
+        }
+
+        .payment-option-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(52, 152, 219, 0.3);
+        }
+
+        .payment-option-btn.full-payment {
+            background: linear-gradient(135deg, #27ae60, #2ecc71);
+        }
+
+        .payment-option-btn.full-payment:hover {
+            box-shadow: 0 8px 20px rgba(46, 204, 113, 0.3);
+        }
+
+        .payment-option-btn.interest-payment {
+            background: linear-gradient(135deg, #f39c12, #e67e22);
+        }
+
+        .payment-option-btn.interest-payment:hover {
+            box-shadow: 0 8px 20px rgba(243, 156, 18, 0.3);
+        }
+
+        .payment-option-btn.custom-payment {
+            background: linear-gradient(135deg, #9b59b6, #8e44ad);
+        }
+
+        .payment-option-btn.custom-payment:hover {
+            box-shadow: 0 8px 20px rgba(155, 89, 182, 0.3);
+        }
+
+        .payment-option-btn.confirm-custom {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            margin-top: 15px;
+        }
+
+        .payment-option-btn.confirm-custom:hover {
+            box-shadow: 0 8px 20px rgba(231, 76, 60, 0.3);
+        }
+
+        .payment-option-btn span {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        .custom-payment-section {
+            padding: 0 20px 20px;
+            border-top: 1px solid #e9ecef;
+            margin-top: 15px;
+            padding-top: 20px;
+        }
+
+        .custom-payment-section .form-group {
+            margin-bottom: 15px;
+        }
+
+        .custom-payment-section label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #495057;
+            font-size: 0.9rem;
+        }
+
+        .custom-payment-section input,
+        .custom-payment-section textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+            box-sizing: border-box;
+        }
+
+        .custom-payment-section input:focus,
+        .custom-payment-section textarea:focus {
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+        }
+
+        .custom-payment-section textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        /* Histórico de pagamentos */
+        .payment-history {
+            margin-top: 15px;
+            padding: 15px;
+            background: #e8f5e8;
+            border-radius: 8px;
+            border-left: 4px solid #27ae60;
+        }
+
+        .payment-history h4 {
+            margin: 0 0 15px 0;
+            color: #27ae60;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .payment-history-item {
+            background: white;
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 8px;
+            border: 1px solid #d4edda;
+            font-size: 0.85rem;
+        }
+
+        .payment-history-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .payment-date {
+            font-weight: 600;
+            color: #27ae60;
+            margin-bottom: 5px;
+        }
+
+        .payment-details {
+            color: #6c757d;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .payment-amount {
+            font-weight: 600;
+            color: #27ae60;
+        }
+
         /* Animação para notificação de atraso */
         @keyframes slideIn {
             from {
@@ -1542,6 +1799,63 @@
             <div class="document-modal-info" id="documentModalInfo">
                 <h3 id="documentModalTitle">Documento</h3>
                 <p id="documentModalDescription">Clique fora da imagem para fechar</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para opções de pagamento -->
+    <div class="payment-modal" id="paymentModal" onclick="closePaymentModal()">
+        <div class="payment-modal-content" onclick="event.stopPropagation()">
+            <div class="payment-modal-header">
+                <h3 id="paymentModalTitle">💰 Receber Pagamento</h3>
+                <button class="payment-modal-close" onclick="closePaymentModal()">✕</button>
+            </div>
+            
+            <div class="payment-info">
+                <div class="payment-summary">
+                    <div class="payment-row">
+                        <span>Valor Original:</span>
+                        <span id="originalAmount">R$ 0,00</span>
+                    </div>
+                    <div class="payment-row">
+                        <span>Juros de Atraso:</span>
+                        <span id="overdueAmount">R$ 0,00</span>
+                    </div>
+                    <div class="payment-row total">
+                        <span>Total Atual:</span>
+                        <span id="currentTotalAmount">R$ 0,00</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="payment-options">
+                <button class="payment-option-btn full-payment" onclick="processFullPayment()">
+                    ✅ Pagamento Total
+                    <span id="fullPaymentAmount">R$ 0,00</span>
+                </button>
+                
+                <button class="payment-option-btn interest-payment" onclick="processInterestPayment()">
+                    📈 Só os Juros
+                    <span id="interestPaymentAmount">R$ 0,00</span>
+                </button>
+                
+                <button class="payment-option-btn custom-payment" onclick="showCustomPayment()">
+                    💵 Valor Personalizado
+                </button>
+            </div>
+            
+            <div class="custom-payment-section" id="customPaymentSection" style="display: none;">
+                <div class="form-group">
+                    <label for="customAmount">Valor Recebido (R$)</label>
+                    <input type="number" id="customAmount" step="0.01" min="0" placeholder="Ex: 150.00">
+                </div>
+                <div class="form-group">
+                    <label for="paymentNote">Observação (opcional)</label>
+                    <textarea id="paymentNote" placeholder="Ex: Pagamento parcial dos juros..."></textarea>
+                </div>
+                <button class="payment-option-btn confirm-custom" onclick="processCustomPayment()">
+                    ✅ Confirmar Pagamento
+                </button>
             </div>
         </div>
     </div>
@@ -2734,6 +3048,26 @@
                             </div>
                         </div>
                         
+                        ${customer.paymentHistory && customer.paymentHistory.length > 0 ? `
+                            <div class="payment-history">
+                                <h4>💰 Histórico de Pagamentos (${customer.paymentHistory.length})</h4>
+                                ${customer.paymentHistory.slice(-3).reverse().map(payment => `
+                                    <div class="payment-history-item">
+                                        <div class="payment-date">📅 ${payment.date}</div>
+                                        <div class="payment-details">
+                                            <span>${payment.type} ${payment.note ? `- ${payment.note}` : ''}</span>
+                                            <span class="payment-amount">${formatCurrency(payment.amount)}</span>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                                ${customer.paymentHistory.length > 3 ? `
+                                    <div style="text-align: center; margin-top: 10px; font-size: 0.8rem; color: #6c757d;">
+                                        ... e mais ${customer.paymentHistory.length - 3} pagamento${customer.paymentHistory.length - 3 > 1 ? 's' : ''}
+                                    </div>
+                                ` : ''}
+                            </div>
+                        ` : ''}
+                        
                         ${customer.documents && customer.documents.length > 0 ? `
                             <div class="customer-documents">
                                 <h4>📄 Documentos (${customer.documents.length})</h4>
@@ -2754,8 +3088,8 @@
                         ` : ''}
                         
                         <div class="customer-actions">
-                            <button class="action-btn paid-btn" onclick="markAsPaid(${customer.id}, ${currentAmount})">
-                                ✅ Pago
+                            <button class="action-btn paid-btn" onclick="showPaymentOptions(${customer.id}, ${currentAmount}, '${customer.name}')">
+                                💰 Receber Pagamento
                             </button>
                             <button class="action-btn contact-btn" onclick="contactCustomer('${customer.phone}', '${customer.name}', ${currentAmount}, ${overdueInfo ? overdueInfo.daysOverdue : 0})">
                                 📱 Contatar
@@ -2769,59 +3103,246 @@
             }).join('');
         }
 
-        async function markAsPaid(customerId, paidAmount = null) {
+        // Variáveis globais para o modal de pagamento
+        let currentPaymentCustomer = null;
+
+        function showPaymentOptions(customerId, currentAmount, customerName) {
             const customer = customers.find(c => c.id === customerId);
-            if (customer) {
-                const finalAmount = paidAmount || customer.totalAmount;
-                const originalProfit = customer.interestEarned;
-                const overdueProfit = customer.overdueInfo ? customer.overdueInfo.overdueInterest : 0;
-                const totalProfit = originalProfit + overdueProfit;
-                
+            if (!customer) return;
+            
+            currentPaymentCustomer = customer;
+            
+            // Calcular valores
+            const originalAmount = customer.totalAmount;
+            const overdueInfo = customer.overdueInfo || { overdueInterest: 0 };
+            const totalAmount = currentAmount;
+            const interestOnly = customer.interestEarned + overdueInfo.overdueInterest;
+            
+            // Preencher modal
+            document.getElementById('paymentModalTitle').textContent = `💰 Receber Pagamento - ${customerName}`;
+            document.getElementById('originalAmount').textContent = formatCurrency(originalAmount);
+            document.getElementById('overdueAmount').textContent = formatCurrency(overdueInfo.overdueInterest);
+            document.getElementById('currentTotalAmount').textContent = formatCurrency(totalAmount);
+            document.getElementById('fullPaymentAmount').textContent = formatCurrency(totalAmount);
+            document.getElementById('interestPaymentAmount').textContent = formatCurrency(interestOnly);
+            
+            // Mostrar modal
+            document.getElementById('paymentModal').classList.add('active');
+            
+            // Esconder seção de pagamento personalizado
+            document.getElementById('customPaymentSection').style.display = 'none';
+        }
+
+        function closePaymentModal() {
+            document.getElementById('paymentModal').classList.remove('active');
+            document.getElementById('customPaymentSection').style.display = 'none';
+            document.getElementById('customAmount').value = '';
+            document.getElementById('paymentNote').value = '';
+            currentPaymentCustomer = null;
+        }
+
+        function showCustomPayment() {
+            document.getElementById('customPaymentSection').style.display = 'block';
+            document.getElementById('customAmount').focus();
+        }
+
+        async function processFullPayment() {
+            if (!currentPaymentCustomer) return;
+            
+            const customer = currentPaymentCustomer;
+            const overdueInfo = customer.overdueInfo || { overdueInterest: 0 };
+            const finalAmount = customer.totalAmount + overdueInfo.overdueInterest;
+            
+            // Adicionar ao histórico de pagamentos
+            if (!customer.paymentHistory) customer.paymentHistory = [];
+            customer.paymentHistory.push({
+                date: new Date().toLocaleDateString('pt-BR'),
+                type: 'Pagamento Total',
+                amount: finalAmount,
+                note: 'Empréstimo quitado completamente'
+            });
+            
+            // Marcar como pago
+            customer.status = 'paid';
+            customer.paidDate = new Date().toLocaleDateString('pt-BR');
+            customer.finalAmount = finalAmount;
+            customer.totalProfitEarned = customer.interestEarned + overdueInfo.overdueInterest;
+            
+            // Atualizar estatísticas
+            dailyStats.totalReceivable -= customer.totalAmount;
+            dailyStats.totalReceived += finalAmount;
+            
+            if (customer.overdueInfo) {
+                dailyStats.totalOverdue -= customer.overdueInfo.overdueInterest;
+                dailyStats.overdueCount -= 1;
+            }
+            
+            await saveAndUpdate();
+            closePaymentModal();
+            
+            showPaymentSuccess(`✅ Empréstimo Quitado!`, `${customer.name} pagou ${formatCurrency(finalAmount)}`);
+        }
+
+        async function processInterestPayment() {
+            if (!currentPaymentCustomer) return;
+            
+            const customer = currentPaymentCustomer;
+            const overdueInfo = customer.overdueInfo || { overdueInterest: 0 };
+            const interestAmount = customer.interestEarned + overdueInfo.overdueInterest;
+            
+            // Adicionar ao histórico de pagamentos
+            if (!customer.paymentHistory) customer.paymentHistory = [];
+            customer.paymentHistory.push({
+                date: new Date().toLocaleDateString('pt-BR'),
+                type: 'Pagamento de Juros',
+                amount: interestAmount,
+                note: 'Pagamento apenas dos juros'
+            });
+            
+            // Atualizar valor do empréstimo (remover juros pagos)
+            customer.totalAmount = customer.principal; // Volta para o valor original
+            customer.interestEarned = 0; // Zerar juros já pagos
+            
+            // Limpar informações de atraso
+            if (customer.overdueInfo) {
+                dailyStats.totalOverdue -= customer.overdueInfo.overdueInterest;
+                dailyStats.overdueCount -= 1;
+                delete customer.overdueInfo;
+            }
+            
+            // Atualizar estatísticas
+            dailyStats.totalReceived += interestAmount;
+            
+            // Renovar data de vencimento (mais 30 dias)
+            const newDueDate = new Date();
+            newDueDate.setDate(newDueDate.getDate() + 30);
+            customer.dueDate = newDueDate.toISOString().split('T')[0];
+            
+            await saveAndUpdate();
+            closePaymentModal();
+            
+            showPaymentSuccess(`📈 Juros Recebidos!`, `${customer.name} pagou ${formatCurrency(interestAmount)} de juros. Empréstimo renovado por mais 30 dias.`);
+        }
+
+        async function processCustomPayment() {
+            if (!currentPaymentCustomer) return;
+            
+            const customAmount = parseFloat(document.getElementById('customAmount').value);
+            const note = document.getElementById('paymentNote').value || 'Pagamento personalizado';
+            
+            if (!customAmount || customAmount <= 0) {
+                alert('Por favor, insira um valor válido.');
+                return;
+            }
+            
+            const customer = currentPaymentCustomer;
+            const overdueInfo = customer.overdueInfo || { overdueInterest: 0 };
+            const totalOwed = customer.totalAmount + overdueInfo.overdueInterest;
+            
+            // Adicionar ao histórico de pagamentos
+            if (!customer.paymentHistory) customer.paymentHistory = [];
+            customer.paymentHistory.push({
+                date: new Date().toLocaleDateString('pt-BR'),
+                type: 'Pagamento Parcial',
+                amount: customAmount,
+                note: note
+            });
+            
+            // Verificar se quitou completamente
+            if (customAmount >= totalOwed) {
+                // Pagamento total
                 customer.status = 'paid';
                 customer.paidDate = new Date().toLocaleDateString('pt-BR');
-                customer.finalAmount = finalAmount;
-                customer.totalProfitEarned = totalProfit;
+                customer.finalAmount = customAmount;
+                customer.totalProfitEarned = customer.interestEarned + overdueInfo.overdueInterest;
                 
-                // Atualizar estatísticas - mover de "a receber" para "recebido"
                 dailyStats.totalReceivable -= customer.totalAmount;
-                dailyStats.totalReceived += finalAmount;
                 
-                // Atualizar estatísticas de atraso se aplicável
                 if (customer.overdueInfo) {
                     dailyStats.totalOverdue -= customer.overdueInfo.overdueInterest;
                     dailyStats.overdueCount -= 1;
                 }
+            } else {
+                // Pagamento parcial - reduzir valor devido
+                const remainingAmount = totalOwed - customAmount;
                 
-                // Salvar dados
-                await lupinDB.saveToStorage('customers', customers);
-                
-                // Atualizar estatísticas no array principal
-                const index = allStats.findIndex(stat => stat.date === dailyStats.date);
-                if (index !== -1) {
-                    allStats[index] = dailyStats;
+                // Se pagou mais que os juros, reduzir do principal também
+                if (customAmount > (customer.interestEarned + overdueInfo.overdueInterest)) {
+                    const principalPayment = customAmount - (customer.interestEarned + overdueInfo.overdueInterest);
+                    customer.principal -= principalPayment;
+                    customer.totalAmount = customer.principal + customer.interestEarned;
+                    customer.interestEarned = 0;
+                } else {
+                    // Pagou apenas parte dos juros
+                    const newInterest = Math.max(0, (customer.interestEarned + overdueInfo.overdueInterest) - customAmount);
+                    customer.interestEarned = newInterest;
+                    customer.totalAmount = customer.principal + newInterest;
                 }
-                await lupinDB.saveToStorage('allStats', allStats);
                 
-                displayCustomers();
-                displayDailyStats();
-                
-                // Show success message
-                const customerCard = event.target.closest('.customer-card');
-                customerCard.style.background = '#d4edda';
-                customerCard.innerHTML = `
-                    <div style="text-align: center; padding: 20px; color: #155724;">
-                        <h3>✅ Empréstimo Quitado!</h3>
-                        <p><strong>${customer.name}</strong> pagou ${formatCurrency(finalAmount)}</p>
-                        <p>Lucro original: ${formatCurrency(originalProfit)}</p>
-                        ${overdueProfit > 0 ? `<p>Juros de atraso: ${formatCurrency(overdueProfit)}</p>` : ''}
-                        <p><strong>Lucro total: ${formatCurrency(totalProfit)}</strong></p>
-                    </div>
-                `;
-                
-                setTimeout(() => {
-                    displayCustomers();
-                }, 4000);
+                // Limpar atraso se foi pago
+                if (customer.overdueInfo && customAmount >= overdueInfo.overdueInterest) {
+                    dailyStats.totalOverdue -= customer.overdueInfo.overdueInterest;
+                    dailyStats.overdueCount -= 1;
+                    delete customer.overdueInfo;
+                }
             }
+            
+            // Atualizar estatísticas
+            dailyStats.totalReceived += customAmount;
+            
+            await saveAndUpdate();
+            closePaymentModal();
+            
+            const message = customer.status === 'paid' 
+                ? `✅ Empréstimo Quitado!` 
+                : `💵 Pagamento Parcial Recebido!`;
+            const details = customer.status === 'paid'
+                ? `${customer.name} quitou completamente o empréstimo`
+                : `${customer.name} pagou ${formatCurrency(customAmount)}. Restam ${formatCurrency(customer.totalAmount)}`;
+                
+            showPaymentSuccess(message, details);
+        }
+
+        async function saveAndUpdate() {
+            await lupinDB.saveToStorage('customers', customers);
+            
+            const index = allStats.findIndex(stat => stat.date === dailyStats.date);
+            if (index !== -1) {
+                allStats[index] = dailyStats;
+            }
+            await lupinDB.saveToStorage('allStats', allStats);
+            
+            displayCustomers();
+            displayDailyStats();
+        }
+
+        function showPaymentSuccess(title, message) {
+            // Criar notificação de sucesso
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: linear-gradient(135deg, #27ae60, #2ecc71);
+                color: white;
+                padding: 20px;
+                border-radius: 10px;
+                box-shadow: 0 5px 15px rgba(46, 204, 113, 0.3);
+                z-index: 1001;
+                max-width: 350px;
+                animation: slideIn 0.5s ease;
+            `;
+            
+            notification.innerHTML = `
+                <div style="font-size: 1.1rem; font-weight: 600; margin-bottom: 8px;">${title}</div>
+                <div style="font-size: 0.9rem; opacity: 0.9;">${message}</div>
+            `;
+            
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.remove();
+            }, 5000);
         }
 
         function contactCustomer(phone, name, amount, daysOverdue = 0) {
@@ -3187,5 +3708,5 @@
             }, 2000);
         });
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'991925c38773009f',t:'MTc2MDk2OTkzOC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'991953d0011a009f',t:'MTc2MDk3MTgyNS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
